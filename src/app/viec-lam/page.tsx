@@ -16,7 +16,9 @@ import {
   Check,
   Eye,
   FileText,
-  Heart
+  Heart,
+  Users,
+  Award
 } from 'lucide-react';
 import { dbHelper, Job, UserSession, JobApplication } from '@/lib/supabase';
 import { MotionDiv } from '@/components/motion';
@@ -35,6 +37,7 @@ export default function Jobs() {
 
   // Modals & Panels State
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [applyType, setApplyType] = useState<'apply' | 'refer'>('apply');
   const [selectedJobDetail, setSelectedJobDetail] = useState<Job | null>(null);
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [isApplySuccess, setIsApplySuccess] = useState(false);
@@ -44,6 +47,11 @@ export default function Jobs() {
     phone: '',
     linkedin: '',
     cvLink: ''
+  });
+  const [referrerForm, setReferrerForm] = useState({
+    referrerName: '',
+    referrerEmail: '',
+    referrerPhone: ''
   });
 
   const toggleSaveJob = (jobId: string) => {
@@ -150,7 +158,7 @@ export default function Jobs() {
     e.preventDefault();
     if (!selectedJob) return;
 
-    const newApp = await dbHelper.addApplication({
+    const payload = {
       jobId: selectedJob.id,
       jobTitle: selectedJob.title,
       company: selectedJob.company,
@@ -158,8 +166,16 @@ export default function Jobs() {
       email: applyForm.email,
       phone: applyForm.phone,
       linkedin: applyForm.linkedin,
-      cvLink: applyForm.cvLink
-    });
+      cvLink: applyForm.cvLink,
+      isReferral: applyType === 'refer',
+      ...(applyType === 'refer' ? {
+        referrerName: referrerForm.referrerName,
+        referrerEmail: referrerForm.referrerEmail,
+        referrerPhone: referrerForm.referrerPhone
+      } : {})
+    };
+
+    const newApp = await dbHelper.addApplication(payload);
 
     setApplications((prev) => [newApp, ...prev]);
     setIsApplySuccess(true);
@@ -169,6 +185,11 @@ export default function Jobs() {
       phone: '',
       linkedin: '',
       cvLink: ''
+    });
+    setReferrerForm({
+      referrerName: '',
+      referrerEmail: '',
+      referrerPhone: ''
     });
 
     setTimeout(() => {
@@ -302,7 +323,7 @@ export default function Jobs() {
           </h1>
           <div className="w-16 h-1 bg-[#D4AF37] mx-auto mb-6" />
           <p className="text-sm md:text-base text-gray-600 font-medium leading-relaxed max-w-2xl mx-auto">
-            Khám phá các vị trí tuyển dụng HRBP, TA, HR Manager, Headhunter và CHRO cao cấp từ các tập đoàn và doanh nghiệp đối tác uy tín toàn quốc.
+            Khám phá các vị trí tuyển dụng đa ngành nghề từ các tập đoàn và doanh nghiệp đối tác uy tín toàn quốc.
           </p>
         </div>
       </section>
@@ -431,7 +452,7 @@ export default function Jobs() {
               ) : (
                 <form onSubmit={handlePostJobSubmit} className="space-y-6">
                   {isPostSuccess ? (
-                    <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-center flex items-center justify-center space-x-2 font-bold text-sm">
+                    <div className="p-4 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 text-[#B8860B] text-center flex items-center justify-center space-x-2 font-bold text-sm">
                       <CheckCircle size={18} />
                       <span>
                         {currentUser.role === 'admin'
@@ -460,7 +481,7 @@ export default function Jobs() {
                           <input
                             type="text"
                             required
-                            placeholder="Ví dụ: Job Service Connect"
+                            placeholder="Ví dụ: Job Service"
                             value={newJobForm.company}
                             onChange={(e) => setNewJobForm({ ...newJobForm, company: e.target.value })}
                             className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold bg-white"
@@ -584,9 +605,16 @@ export default function Jobs() {
                         <h4 className="text-lg font-black text-gray-900 hover:text-[#D4AF37] transition-colors leading-snug">
                           {job.title}
                         </h4>
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mt-1">
-                          {job.company}
-                        </span>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
+                            {job.company}
+                          </span>
+                          {job.skills.some(s => s.toLowerCase() === 'headhunt') && (
+                            <span className="bg-[#D4AF37] text-white text-[8px] font-black uppercase px-2 py-0.5 rounded shadow-sm">
+                              Headhunt
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {job.approved && (
                         <span className="text-[10px] font-extrabold text-[#B8860B] uppercase tracking-wider bg-[#D4AF37]/10 px-2.5 py-1 rounded-md flex-shrink-0">
@@ -647,7 +675,7 @@ export default function Jobs() {
                         {!job.approved && (
                           <button
                             onClick={() => handleApproveJob(job.id)}
-                            className="flex items-center space-x-1 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-black uppercase rounded-lg transition-colors"
+                            className="flex items-center space-x-1 px-3 py-1.5 bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#B8860B] text-[10px] font-black uppercase rounded-lg transition-colors"
                             title="Phê duyệt"
                           >
                             <Check size={11} />
@@ -697,7 +725,7 @@ export default function Jobs() {
 
             {isApplySuccess ? (
               <div className="py-8 text-center flex flex-col items-center justify-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-green-50 border border-green-200 flex items-center justify-center text-green-600 shadow-md">
+                <div className="w-16 h-16 rounded-full bg-[#FDFBF7] border border-[#D4AF37]/30 flex items-center justify-center text-[#B8860B] shadow-md">
                   <CheckCircle size={32} />
                 </div>
                 <h3 className="text-xl font-black text-gray-900">Nộp Hồ Sơ Thành Công!</h3>
@@ -709,20 +737,96 @@ export default function Jobs() {
               <>
                 <div className="border-b border-[#D4AF37]/10 pb-4 mb-6">
                   <span className="text-[10px] font-extrabold text-[#B8860B] uppercase tracking-wider bg-[#D4AF37]/10 px-2 py-0.5 rounded-md">
-                    Ứng tuyển việc làm
+                    {applyType === 'refer' ? 'Giới thiệu ứng viên (Nhận hoa hồng)' : 'Ứng tuyển việc làm'}
                   </span>
                   <h3 className="text-xl font-black text-gray-900 mt-2">{selectedJob.title}</h3>
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{selectedJob.company}</span>
                 </div>
 
-                <form onSubmit={handleApplySubmit} className="space-y-4">
+                {selectedJob.skills.some(s => s.toLowerCase() === 'headhunt') && (
+                  <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                    <button
+                      type="button"
+                      onClick={() => setApplyType('apply')}
+                      className={`w-1/2 py-2 rounded-lg text-xs font-bold transition-all ${
+                        applyType === 'apply'
+                          ? 'bg-white text-[#B8860B] shadow-sm'
+                          : 'text-gray-500 hover:text-gray-950'
+                      }`}
+                    >
+                      Tự ứng tuyển
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setApplyType('refer')}
+                      className={`w-1/2 py-2 rounded-lg text-xs font-bold transition-all ${
+                        applyType === 'refer'
+                          ? 'bg-white text-[#B8860B] shadow-sm'
+                          : 'text-gray-500 hover:text-gray-950'
+                      }`}
+                    >
+                      Giới thiệu ứng viên
+                    </button>
+                  </div>
+                )}
+
+                <form onSubmit={handleApplySubmit} className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                  {applyType === 'refer' && (
+                    <div className="p-4 rounded-2xl bg-[#FDFBF7] border border-[#D4AF37]/20 space-y-3 shadow-sm mb-4">
+                      <span className="text-[10px] font-extrabold text-[#B8860B] uppercase tracking-wider block">
+                        Thông tin người giới thiệu (Đối tác)
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[10px] font-bold text-gray-700">Họ và tên của bạn *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Nguyễn Văn A"
+                            value={referrerForm.referrerName}
+                            onChange={(e) => setReferrerForm({ ...referrerForm, referrerName: e.target.value })}
+                            className="px-3 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                          />
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[10px] font-bold text-gray-700">Số điện thoại *</label>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="0987654321"
+                            value={referrerForm.referrerPhone}
+                            onChange={(e) => setReferrerForm({ ...referrerForm, referrerPhone: e.target.value })}
+                            className="px-3 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[10px] font-bold text-gray-700">Địa chỉ Email của bạn *</label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="partner@example.com"
+                          value={referrerForm.referrerEmail}
+                          onChange={(e) => setReferrerForm({ ...referrerForm, referrerEmail: e.target.value })}
+                          className="px-3 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {applyType === 'refer' && (
+                    <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider block pt-2 border-t border-gray-100">
+                      Thông tin ứng viên được giới thiệu
+                    </span>
+                  )}
+
                   {/* Name */}
                   <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Họ và tên *</label>
+                    <label className="text-xs font-bold text-gray-700">Họ và tên ứng viên *</label>
                     <input
                       type="text"
                       required
-                      placeholder="Nguyễn Văn A"
+                      placeholder="Nguyễn Văn B"
                       value={applyForm.fullName}
                       onChange={(e) => setApplyForm({ ...applyForm, fullName: e.target.value })}
                       className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold bg-white"
@@ -732,18 +836,18 @@ export default function Jobs() {
                   {/* Email & Phone */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col space-y-1">
-                      <label className="text-xs font-bold text-gray-700">Email *</label>
+                      <label className="text-xs font-bold text-gray-700">Email ứng viên *</label>
                       <input
                         type="email"
                         required
-                        placeholder="email@example.com"
+                        placeholder="candidate@example.com"
                         value={applyForm.email}
                         onChange={(e) => setApplyForm({ ...applyForm, email: e.target.value })}
                         className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
                       />
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <label className="text-xs font-bold text-gray-700">Số điện thoại *</label>
+                      <label className="text-xs font-bold text-gray-700">Số điện thoại ứng viên *</label>
                       <input
                         type="tel"
                         required
@@ -757,7 +861,7 @@ export default function Jobs() {
 
                   {/* LinkedIn Profile */}
                   <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Link LinkedIn cá nhân</label>
+                    <label className="text-xs font-bold text-gray-700">Link LinkedIn ứng viên</label>
                     <input
                       type="url"
                       placeholder="https://linkedin.com/in/username"
@@ -769,9 +873,10 @@ export default function Jobs() {
 
                   {/* CV Link */}
                   <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Đường dẫn tệp CV (Drive, Dropbox, PDF...)</label>
+                    <label className="text-xs font-bold text-gray-700">Đường dẫn tệp CV ứng viên (Drive, PDF...) *</label>
                     <input
                       type="url"
+                      required
                       placeholder="https://drive.google.com/..."
                       value={applyForm.cvLink}
                       onChange={(e) => setApplyForm({ ...applyForm, cvLink: e.target.value })}
@@ -781,10 +886,10 @@ export default function Jobs() {
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-md flex items-center justify-center space-x-2"
+                    className="w-full py-3.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-md flex items-center justify-center space-x-2 mt-4"
                   >
                     <Send size={14} />
-                    <span>Nộp hồ sơ ứng tuyển</span>
+                    <span>{applyType === 'refer' ? 'Gửi thông tin giới thiệu' : 'Nộp hồ sơ ứng tuyển'}</span>
                   </button>
                 </form>
               </>
@@ -974,11 +1079,25 @@ export default function Jobs() {
                     {visibleApplications.map((app) => (
                       <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="p-4">
-                          <span className="font-black text-gray-900 block">{app.fullName}</span>
+                          <span className="font-black text-gray-900 block">
+                            {app.fullName}
+                            {app.isReferral && (
+                              <span className="inline-block bg-[#D4AF37]/10 text-[#B8860B] text-[8px] font-black uppercase px-2 py-0.5 rounded ml-2">
+                                Được giới thiệu
+                              </span>
+                            )}
+                          </span>
                         </td>
                         <td className="p-4 space-y-1">
                           <span className="block text-[11px]">{app.email}</span>
                           <span className="block text-[11px] text-gray-400">{app.phone}</span>
+                          {app.isReferral && (
+                            <div className="mt-1.5 pt-1.5 border-t border-dashed border-[#D4AF37]/20 text-[9px] text-gray-600">
+                              <span className="font-bold text-[#B8860B] block">Người giới thiệu:</span>
+                              <span className="font-bold text-gray-800">{app.referrerName}</span>
+                              <span className="block text-[8px] text-gray-400">{app.referrerEmail} - {app.referrerPhone}</span>
+                            </div>
+                          )}
                         </td>
                         <td className="p-4">
                           <span className="font-black text-gray-900 block leading-tight">{app.jobTitle}</span>
@@ -1057,7 +1176,7 @@ export default function Jobs() {
                     <h2 className="text-xl md:text-2xl font-black text-gray-900 leading-snug">
                       {selectedJobDetail.title}
                     </h2>
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white text-xs mt-1.5 flex-shrink-0" title="Đã xác thực">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#D4AF37] text-white text-xs mt-1.5 flex-shrink-0" title="Đã xác thực">
                       ✓
                     </span>
                   </div>
@@ -1066,7 +1185,7 @@ export default function Jobs() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Salary */}
                     <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
-                      <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+                      <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center text-[#B8860B]">
                         <DollarSign size={20} />
                       </div>
                       <div className="flex flex-col">
@@ -1106,7 +1225,7 @@ export default function Jobs() {
                   <div>
                     <button 
                       onClick={() => alert(`Mức lương thị trường trung bình cho vị trí ${selectedJobDetail.title} tại ${selectedJobDetail.location} dao động từ 22,000,000 đến 48,000,000 VND/tháng.`)}
-                      className="text-xs text-green-600 hover:text-green-700 font-bold flex items-center space-x-1"
+                      className="text-xs text-[#B8860B] hover:text-[#D4AF37] font-bold flex items-center space-x-1"
                     >
                       <span>Xem mức lương thị trường cho vị trí này &gt;&gt;</span>
                     </button>
@@ -1125,32 +1244,71 @@ export default function Jobs() {
                     <span>Hạn nộp hồ sơ: 28/06/2026 (Còn 28 ngày)</span>
                   </div>
 
-                  {/* Action buttons (Ứng tuyển ngay & Lưu tin) */}
-                  <div className="flex space-x-3 pt-2">
-                    <button
-                      onClick={() => {
-                        setSelectedJobDetail(null);
-                        setSelectedJob(selectedJobDetail);
-                      }}
-                      className="flex-grow py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-black uppercase tracking-wider transition-colors shadow flex items-center justify-center space-x-2"
-                    >
-                      <Send size={14} />
-                      <span>Ứng tuyển ngay</span>
-                    </button>
+                  {/* Referral Commission Banner */}
+                  {selectedJobDetail.skills.some(s => s.toLowerCase() === 'headhunt') && (
+                    <div className="p-3.5 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 flex items-center justify-between text-xs text-[#B8860B] font-bold">
+                      <span className="flex items-center space-x-1.5">
+                        <Award size={16} className="text-[#D4AF37]" />
+                        <span>Phí giới thiệu ứng viên: <strong className="text-[#B8860B]">3.000.000 VND - 5.000.000 VND (hoặc 15% hoa hồng)</strong></span>
+                      </span>
+                      <span className="bg-[#D4AF37] text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">Hoa hồng cao</span>
+                    </div>
+                  )}
+
+                  {/* Action buttons (Ứng tuyển ngay / Tự ứng tuyển & Giới thiệu ứng viên & Lưu tin) */}
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    {selectedJobDetail.skills.some(s => s.toLowerCase() === 'headhunt') ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            setApplyType('apply');
+                            setSelectedJob(selectedJobDetail);
+                            setSelectedJobDetail(null);
+                          }}
+                          className="flex-grow min-w-[140px] py-3 rounded-xl border border-[#D4AF37] hover:bg-[#D4AF37]/5 text-[#B8860B] text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2"
+                        >
+                          <Send size={14} />
+                          <span>Tự ứng tuyển</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setApplyType('refer');
+                            setSelectedJob(selectedJobDetail);
+                            setSelectedJobDetail(null);
+                          }}
+                          className="flex-grow min-w-[160px] py-3 rounded-xl bg-[#D4AF37] hover:bg-[#B8860B] text-white text-xs font-black uppercase tracking-wider transition-colors shadow flex items-center justify-center space-x-2"
+                        >
+                          <Users size={14} />
+                          <span>Giới thiệu ứng viên</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setApplyType('apply');
+                          setSelectedJob(selectedJobDetail);
+                          setSelectedJobDetail(null);
+                        }}
+                        className="flex-grow py-3 rounded-xl bg-[#D4AF37] hover:bg-[#B8860B] text-white text-xs font-black uppercase tracking-wider transition-colors shadow flex items-center justify-center space-x-2"
+                      >
+                        <Send size={14} />
+                        <span>Ứng tuyển ngay</span>
+                      </button>
+                    )}
 
                     <button
                       onClick={() => {
                         toggleSaveJob(selectedJobDetail.id);
                         alert(savedJobIds.includes(selectedJobDetail.id) ? "Đã bỏ lưu tin tuyển dụng!" : "Lưu tin tuyển dụng thành công!");
                       }}
-                      className={`px-6 py-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all flex items-center space-x-2 ${
+                      className={`px-6 py-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2 ${
                         savedJobIds.includes(selectedJobDetail.id)
                           ? 'bg-red-50 border-red-200 text-red-600'
                           : 'border-gray-300 hover:border-gray-400 text-gray-700 bg-white'
                       }`}
                     >
                       <Heart size={14} className={savedJobIds.includes(selectedJobDetail.id) ? "fill-red-600" : ""} />
-                      <span>{savedJobIds.includes(selectedJobDetail.id) ? 'Đã lưu tin' : 'Lưu tin'}</span>
+                      <span>{savedJobIds.includes(selectedJobDetail.id) ? 'Đã lưu' : 'Lưu tin'}</span>
                     </button>
                   </div>
                 </div>
@@ -1257,7 +1415,7 @@ export default function Jobs() {
 
                   <button
                     onClick={() => alert(`Đang tải trang hồ sơ công ty ${selectedJobDetail.company}...`)}
-                    className="w-full py-2.5 rounded-xl border border-green-600 hover:bg-green-50 text-green-600 text-[11px] font-black transition-all text-center block uppercase tracking-wider"
+                    className="w-full py-2.5 rounded-xl border border-[#D4AF37] hover:bg-[#D4AF37]/5 text-[#B8860B] text-[11px] font-black transition-all text-center block uppercase tracking-wider"
                   >
                     Xem trang công ty
                   </button>

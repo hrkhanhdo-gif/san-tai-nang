@@ -145,7 +145,7 @@ export default function JoinNow() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {isSuccess ? (
-                <div className="p-6 rounded-xl bg-green-50 border border-green-200 text-green-700 text-center flex flex-col items-center justify-center space-y-2 font-bold text-sm">
+                <div className="p-6 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 text-[#B8860B] text-center flex flex-col items-center justify-center space-y-2 font-bold text-sm">
                   <CheckCircle size={28} />
                   <span>Đăng ký thành công! Đang lưu thông tin và chuyển hướng...</span>
                 </div>
@@ -215,7 +215,7 @@ export default function JoinNow() {
                       <input
                         type="text"
                         required
-                        placeholder="Ví dụ: Job Service Connect"
+                        placeholder="Ví dụ: Job Service"
                         value={form.company}
                         onChange={(e) => setForm({ ...form, company: e.target.value })}
                         className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"

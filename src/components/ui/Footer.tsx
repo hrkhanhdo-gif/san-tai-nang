@@ -111,10 +111,10 @@ export default function Footer() {
           </h4>
           <div className="p-4 rounded-xl bg-white border border-[#D4AF37]/10 flex flex-col space-y-2">
             <span className="text-xs font-bold text-[#B8860B] uppercase tracking-wider">
-              CEO Hằng Nghĩa Thuận
+              CEO Hàng Nghĩa Thuận
             </span>
             <span className="text-sm font-black text-gray-800">
-              JOB SERVICE CONNECT
+              JOB SERVICE
             </span>
             <p className="text-xs text-gray-500 leading-relaxed">
               Công ty chuyên nghiệp trong lĩnh vực Headhunt, Tuyển dụng và Cung cấp giải pháp nhân sự cấp cao toàn diện.

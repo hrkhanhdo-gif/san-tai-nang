@@ -25,7 +25,7 @@ export default function About() {
   const timeline = [
     {
       period: '09/2018 - ĐẾN NAY',
-      company: 'CÔNG TY TNHH JOB SERVICE CONNECT',
+      company: 'CÔNG TY TNHH JOB SERVICE',
       role: 'Giám đốc điều hành (CEO)',
       details: 'Lĩnh vực: Headhunt - Tuyển dụng Nhân sự Tài năng. Quy mô: 20 nhân viên.',
       tasks: [
@@ -111,7 +111,7 @@ export default function About() {
               {/* Profile Image */}
               <img 
                 src="/thuan-hn.jpg" 
-                alt="CEO Hằng Nghĩa Thuận"
+                alt="CEO Hàng Nghĩa Thuận"
                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
               />
               {/* Gradient Overlay */}
@@ -120,9 +120,9 @@ export default function About() {
               {/* Text on top of image */}
               <div className="absolute bottom-0 left-0 right-0 p-6 text-white space-y-4">
                 <div>
-                  <h3 className="text-xl font-black tracking-wide">HẰNG NGHĨA THUẬN</h3>
+                  <h3 className="text-xl font-black tracking-wide">HÀNG NGHĨA THUẬN</h3>
                   <p className="text-xs text-[#D4AF37] font-bold tracking-widest uppercase mt-1">
-                    CEO - JOB SERVICE CONNECT
+                    CEO - JOB SERVICE
                   </p>
                 </div>
                 
@@ -154,10 +154,10 @@ export default function About() {
           >
             <span className="text-xs font-bold text-[#B8860B] uppercase tracking-widest">Người sáng lập cộng đồng</span>
             <h1 className="text-3xl md:text-5xl font-black text-gray-900 leading-tight">
-              Hằng Nghĩa Thuận
+              Hàng Nghĩa Thuận
             </h1>
             <h2 className="text-lg md:text-xl font-bold text-[#D4AF37] -mt-3">
-              Talent Acquisition & Recruitment Partner
+              Co-Founder & CEO - Job Service
             </h2>
             <div className="w-16 h-1 bg-[#D4AF37] mb-4" />
 
@@ -175,7 +175,7 @@ export default function About() {
               <Building className="text-[#D4AF37] flex-shrink-0 mt-0.5" size={24} />
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Doanh nghiệp đang điều hành</span>
-                <span className="text-base font-black text-gray-800 tracking-wide">JOB SERVICE CONNECT</span>
+                <span className="text-base font-black text-gray-800 tracking-wide">JOB SERVICE</span>
                 <span className="text-xs text-gray-500 font-semibold mt-1">
                   Đơn vị uy tín trong mảng Headhunt, cung ứng nhân lực cấp cao và tư vấn xây dựng chính sách thu hút tài năng.
                 </span>

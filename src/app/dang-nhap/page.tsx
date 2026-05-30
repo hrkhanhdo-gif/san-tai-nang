@@ -104,7 +104,7 @@ export default function Login() {
 
         {isSuccess ? (
           <div className="py-10 text-center flex flex-col items-center justify-center space-y-4">
-            <div className="w-14 h-14 rounded-full bg-green-50 border border-green-200 flex items-center justify-center text-green-600 shadow">
+            <div className="w-14 h-14 rounded-full bg-[#FDFBF7] border border-[#D4AF37]/30 flex items-center justify-center text-[#B8860B] shadow">
               <CheckCircle size={26} />
             </div>
             <h3 className="text-base font-black text-gray-900">Đăng nhập thành công!</h3>

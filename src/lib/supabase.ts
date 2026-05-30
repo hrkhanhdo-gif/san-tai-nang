@@ -65,6 +65,10 @@ export interface JobApplication {
   linkedin: string;
   cvLink: string;
   created_at: string;
+  referrerName?: string;
+  referrerEmail?: string;
+  referrerPhone?: string;
+  isReferral?: boolean;
 }
 
 export interface ActivityComment {
@@ -96,7 +100,7 @@ const DEFAULT_JOBS: Job[] = [
     company: 'Tập đoàn Công nghệ NextGen',
     salary: '25,000,000 - 35,000,000 VND',
     location: 'TP. Hồ Chí Minh',
-    skills: ['IT Recruitment', 'Headhunting', 'Employer Branding'],
+    skills: ['IT Recruitment', 'Headhunting', 'Employer Branding', 'Headhunt'],
     level: 'Senior',
     type: 'Full-time',
     description: 'Chịu trách nhiệm tìm kiếm nhân sự cấp trung, cấp cao cho mảng Công nghệ thông tin của tập đoàn...',
@@ -121,13 +125,13 @@ const DEFAULT_JOBS: Job[] = [
   {
     id: 'job-3',
     title: 'Headhunter Consultant (HR Tech)',
-    company: 'Job Service Connect',
+    company: 'Job Service',
     salary: 'Cạnh tranh + Commission',
     location: 'TP. Hồ Chí Minh',
-    skills: ['Executive Search', 'Client Relationship', 'Sourcing'],
+    skills: ['Executive Search', 'Client Relationship', 'Sourcing', 'Headhunt'],
     level: 'Senior',
     type: 'Hybrid',
-    description: 'Làm việc trực tiếp cùng chị Hằng Nghĩa Thuận để săn tài năng cấp cao cho các doanh nghiệp đối tác lớn...',
+    description: 'Làm việc trực tiếp cùng chị Hàng Nghĩa Thuận để săn tài năng cấp cao cho các doanh nghiệp đối tác lớn...',
     created_at: new Date().toISOString(),
     posted_by: 'admin@sntn.vn',
     approved: true,
@@ -265,7 +269,7 @@ export const dbHelper = {
     if (trimmedEmail === 'admin@sntn.vn') {
       sessionUser = {
         email: 'admin@sntn.vn',
-        fullName: 'Hằng Nghĩa Thuận',
+        fullName: 'Hàng Nghĩa Thuận',
         role: 'admin',
         company: 'Săn Tài Năng'
       };

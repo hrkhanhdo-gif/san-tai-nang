@@ -93,8 +93,7 @@ export default function Services() {
             Giải pháp nhân sự toàn diện
           </span>
           <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight mt-6 mb-6">
-            Dịch vụ từ đối tác chiến lược <br />
-            <span className="gradient-gold-text">JOB SERVICE CONNECT</span>
+            <span className="gradient-gold-text">DỊCH VỤ TỪ CỘNG ĐỒNG SĂN TÀI NĂNG</span>
           </h1>
           <div className="w-16 h-1 bg-[#D4AF37] mx-auto mb-6" />
           <p className="text-base md:text-lg text-gray-600 font-medium leading-relaxed max-w-2xl mx-auto">
@@ -172,7 +171,7 @@ export default function Services() {
             Doanh nghiệp của bạn đang cần giải pháp nhân tài đặc biệt?
           </h3>
           <p className="text-sm text-gray-600 font-medium leading-relaxed max-w-2xl mx-auto mb-8">
-            Hãy liên hệ trực tiếp với Hằng Nghĩa Thuận để đặt lịch tư vấn chuyên sâu về thiết lập hệ thống tuyển dụng và săn lùng nhân sự tiềm năng cấp cao.
+            Hãy liên hệ trực tiếp với Hàng Nghĩa Thuận để đặt lịch tư vấn chuyên sâu về thiết lập hệ thống tuyển dụng và săn lùng nhân sự tiềm năng cấp cao.
           </p>
           <Link
             href="/lien-he"

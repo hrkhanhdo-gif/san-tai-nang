@@ -156,7 +156,7 @@ export default function Contact() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {isSuccess ? (
-                <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-center flex items-center justify-center space-x-2 font-bold text-sm">
+                <div className="p-4 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 text-[#B8860B] text-center flex items-center justify-center space-x-2 font-bold text-sm">
                   <CheckCircle size={18} />
                   <span>Lời nhắn của bạn đã được gửi thành công! Cảm ơn sự quan tâm từ bạn.</span>
                 </div>

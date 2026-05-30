@@ -122,7 +122,7 @@ export default function Community() {
       avatar: "MC"
     },
     {
-      quote: "Chương trình Mentor Recruiter của cộng đồng rất hữu ích. Tôi đã được chị Hằng Nghĩa Thuận trực tiếp hướng dẫn kỹ năng đánh giá ứng viên cấp quản lý, nhờ đó tự tin hơn hẳn khi tham gia các buổi phỏng vấn điều hành.",
+      quote: "Chương trình Mentor Recruiter của cộng đồng rất hữu ích. Tôi đã được chị Hàng Nghĩa Thuận trực tiếp hướng dẫn kỹ năng đánh giá ứng viên cấp quản lý, nhờ đó tự tin hơn hẳn khi tham gia các buổi phỏng vấn điều hành.",
       name: "Trần Hoàng Nam",
       role: "Senior HRBP tại An Phát Holdings",
       avatar: "HN"
@@ -426,7 +426,7 @@ export default function Community() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {isSuccess ? (
-                    <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-center flex items-center justify-center space-x-2 font-bold text-sm">
+                    <div className="p-4 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 text-[#B8860B] text-center flex items-center justify-center space-x-2 font-bold text-sm">
                       <CheckCircle size={18} />
                       <span>Đăng ký tham gia cộng đồng thành công! Chúng tôi đã nhận được thông tin của bạn.</span>
                     </div>
@@ -557,7 +557,7 @@ export default function Community() {
               </h3>
 
               {isAdminPostSuccess ? (
-                <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-center flex items-center justify-center space-x-2 font-bold text-sm">
+                <div className="p-4 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 text-[#B8860B] text-center flex items-center justify-center space-x-2 font-bold text-sm">
                   <CheckCircle size={16} />
                   <span>Bài viết đã được đăng tải thành công lên cộng đồng!</span>
                 </div>
