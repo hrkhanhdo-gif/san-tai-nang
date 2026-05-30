@@ -70,7 +70,13 @@ export default function Jobs() {
     level: 'Senior',
     type: 'Full-time',
     skills: '',
-    description: ''
+    description: '',
+    requirements: '',
+    benefits: '',
+    workingTime: '',
+    workingAddress: '',
+    isHeadhunt: false,
+    referralCommission: ''
   });
   const [isPostSuccess, setIsPostSuccess] = useState(false);
 
@@ -84,7 +90,13 @@ export default function Jobs() {
     level: 'Senior',
     type: 'Full-time',
     skills: '',
-    description: ''
+    description: '',
+    requirements: '',
+    benefits: '',
+    workingTime: '',
+    workingAddress: '',
+    isHeadhunt: false,
+    referralCommission: ''
   });
 
   // CV Applications Modal
@@ -208,6 +220,10 @@ export default function Jobs() {
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
 
+    if (newJobForm.isHeadhunt && !skillsArray.some(s => s.toLowerCase() === 'headhunt')) {
+      skillsArray.push('Headhunt');
+    }
+
     const jobPayload = {
       title: newJobForm.title,
       company: newJobForm.company,
@@ -216,7 +232,13 @@ export default function Jobs() {
       level: newJobForm.level,
       type: newJobForm.type,
       skills: skillsArray.length > 0 ? skillsArray : ['Tuyển dụng', 'HR'],
-      description: newJobForm.description
+      description: newJobForm.description,
+      requirements: newJobForm.requirements,
+      benefits: newJobForm.benefits,
+      workingTime: newJobForm.workingTime,
+      workingAddress: newJobForm.workingAddress,
+      isHeadhunt: newJobForm.isHeadhunt,
+      referralCommission: newJobForm.isHeadhunt ? newJobForm.referralCommission : ''
     };
 
     const approveImmediately = currentUser.role === 'admin';
@@ -232,7 +254,13 @@ export default function Jobs() {
       level: 'Senior',
       type: 'Full-time',
       skills: '',
-      description: ''
+      description: '',
+      requirements: '',
+      benefits: '',
+      workingTime: '',
+      workingAddress: '',
+      isHeadhunt: false,
+      referralCommission: ''
     });
 
     setTimeout(() => {
@@ -268,7 +296,13 @@ export default function Jobs() {
       level: job.level,
       type: job.type,
       skills: job.skills.join(', '),
-      description: job.description || ''
+      description: job.description || '',
+      requirements: job.requirements || '',
+      benefits: job.benefits || '',
+      workingTime: job.workingTime || '',
+      workingAddress: job.workingAddress || '',
+      isHeadhunt: job.isHeadhunt || false,
+      referralCommission: job.referralCommission || ''
     });
   };
 
@@ -276,10 +310,18 @@ export default function Jobs() {
     e.preventDefault();
     if (!editingJob) return;
 
-    const skillsArray = editJobForm.skills
+    let skillsArray = editJobForm.skills
       .split(',')
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
+
+    if (editJobForm.isHeadhunt) {
+      if (!skillsArray.some(s => s.toLowerCase() === 'headhunt')) {
+        skillsArray.push('Headhunt');
+      }
+    } else {
+      skillsArray = skillsArray.filter(s => s.toLowerCase() !== 'headhunt');
+    }
 
     const updatedPayload = {
       title: editJobForm.title,
@@ -289,7 +331,13 @@ export default function Jobs() {
       level: editJobForm.level,
       type: editJobForm.type,
       skills: skillsArray.length > 0 ? skillsArray : ['Tuyển dụng', 'HR'],
-      description: editJobForm.description
+      description: editJobForm.description,
+      requirements: editJobForm.requirements,
+      benefits: editJobForm.benefits,
+      workingTime: editJobForm.workingTime,
+      workingAddress: editJobForm.workingAddress,
+      isHeadhunt: editJobForm.isHeadhunt,
+      referralCommission: editJobForm.isHeadhunt ? editJobForm.referralCommission : ''
     };
 
     const success = await dbHelper.editJob(editingJob.id, updatedPayload);
@@ -553,15 +601,97 @@ export default function Jobs() {
                         />
                       </div>
 
+                      {/* Headhunt checkbox */}
+                      <div className="flex items-center space-x-2.5 p-3 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/25 shadow-sm">
+                        <input
+                          type="checkbox"
+                          id="isHeadhunt"
+                          checked={newJobForm.isHeadhunt}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, isHeadhunt: e.target.checked })}
+                          className="w-4 h-4 text-[#D4AF37] border-gray-300 rounded focus:ring-[#D4AF37]"
+                        />
+                        <label htmlFor="isHeadhunt" className="text-xs font-bold text-gray-800 cursor-pointer select-none">
+                          Đây là tin tuyển dụng Headhunt (Có phí giới thiệu ứng viên)
+                        </label>
+                      </div>
+
+                      {/* Referral Commission input */}
+                      {newJobForm.isHeadhunt && (
+                        <div className="flex flex-col space-y-1.5 p-4 rounded-xl border border-[#D4AF37]/20 bg-[#FDFBF7]">
+                          <label className="text-xs font-bold text-gray-700">Phí giới thiệu ứng viên (VND hoặc % hoa hồng) *</label>
+                          <input
+                            type="text"
+                            required={newJobForm.isHeadhunt}
+                            placeholder="Ví dụ: 3,000,000 - 5,000,000 VND hoặc 15% hoa hồng"
+                            value={newJobForm.referralCommission}
+                            onChange={(e) => setNewJobForm({ ...newJobForm, referralCommission: e.target.value })}
+                            className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold bg-white"
+                          />
+                        </div>
+                      )}
+
                       {/* Description */}
                       <div className="flex flex-col space-y-1.5">
-                        <label className="text-xs font-bold text-gray-700">Mô tả công việc vắn tắt</label>
+                        <label className="text-xs font-bold text-gray-700">Mô tả công việc *</label>
                         <textarea
-                          rows={3}
-                          placeholder="Ví dụ: Chịu trách nhiệm tìm kiếm các ứng viên IT, thiết lập chiến lược tuyển dụng..."
+                          rows={4}
+                          required
+                          placeholder="- Thực hiện các nhiệm vụ chuyên môn..."
                           value={newJobForm.description}
                           onChange={(e) => setNewJobForm({ ...newJobForm, description: e.target.value })}
                           className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold resize-none bg-white"
+                        />
+                      </div>
+
+                      {/* Requirements */}
+                      <div className="flex flex-col space-y-1.5">
+                        <label className="text-xs font-bold text-gray-700">Yêu cầu công việc *</label>
+                        <textarea
+                          rows={4}
+                          required
+                          placeholder="- Có ít nhất 3 năm kinh nghiệm ở vị trí tương đương..."
+                          value={newJobForm.requirements}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, requirements: e.target.value })}
+                          className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold resize-none bg-white"
+                        />
+                      </div>
+
+                      {/* Benefits */}
+                      <div className="flex flex-col space-y-1.5">
+                        <label className="text-xs font-bold text-gray-700">Quyền lợi *</label>
+                        <textarea
+                          rows={4}
+                          required
+                          placeholder="- Lương tháng 13 + KPIs thưởng hấp dẫn..."
+                          value={newJobForm.benefits}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, benefits: e.target.value })}
+                          className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold resize-none bg-white"
+                        />
+                      </div>
+
+                      {/* Working Time */}
+                      <div className="flex flex-col space-y-1.5">
+                        <label className="text-xs font-bold text-gray-700">Thời gian làm việc *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ví dụ: Thứ 2 - Thứ 6 (8:00 - 17:30)"
+                          value={newJobForm.workingTime}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, workingTime: e.target.value })}
+                          className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold bg-white"
+                        />
+                      </div>
+
+                      {/* Working Address */}
+                      <div className="flex flex-col space-y-1.5">
+                        <label className="text-xs font-bold text-gray-700">Địa chỉ làm việc *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ví dụ: Tòa nhà Bitexco, Quận 1, TP. Hồ Chí Minh"
+                          value={newJobForm.workingAddress}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, workingAddress: e.target.value })}
+                          className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold bg-white"
                         />
                       </div>
 
@@ -1000,14 +1130,87 @@ export default function Jobs() {
                 />
               </div>
 
+              {/* Headhunt checkbox */}
+              <div className="flex items-center space-x-2.5 p-3 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/25 shadow-sm">
+                <input
+                  type="checkbox"
+                  id="editIsHeadhunt"
+                  checked={editJobForm.isHeadhunt}
+                  onChange={(e) => setEditJobForm({ ...editJobForm, isHeadhunt: e.target.checked })}
+                  className="w-4 h-4 text-[#D4AF37] border-gray-300 rounded focus:ring-[#D4AF37]"
+                />
+                <label htmlFor="editIsHeadhunt" className="text-xs font-bold text-gray-800 cursor-pointer select-none">
+                  Đây là tin tuyển dụng Headhunt (Có phí giới thiệu ứng viên)
+                </label>
+              </div>
+
+              {/* Referral Commission input */}
+              {editJobForm.isHeadhunt && (
+                <div className="flex flex-col space-y-1.5 p-4 rounded-xl border border-[#D4AF37]/20 bg-[#FDFBF7]">
+                  <label className="text-xs font-bold text-gray-700">Phí giới thiệu ứng viên (VND hoặc % hoa hồng) *</label>
+                  <input
+                    type="text"
+                    required={editJobForm.isHeadhunt}
+                    placeholder="Ví dụ: 3,000,000 - 5,000,000 VND hoặc 15% hoa hồng"
+                    value={editJobForm.referralCommission}
+                    onChange={(e) => setEditJobForm({ ...editJobForm, referralCommission: e.target.value })}
+                    className="px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#D4AF37] text-xs font-semibold bg-white"
+                  />
+                </div>
+              )}
+
               <div className="flex flex-col space-y-1">
-                <label className="text-xs font-bold text-gray-700">Mô tả chi tiết *</label>
+                <label className="text-xs font-bold text-gray-700">Mô tả công việc *</label>
                 <textarea
                   rows={4}
                   required
                   value={editJobForm.description}
                   onChange={(e) => setEditJobForm({ ...editJobForm, description: e.target.value })}
                   className="px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#D4AF37] text-xs font-semibold resize-none bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col space-y-1">
+                <label className="text-xs font-bold text-gray-700">Yêu cầu công việc *</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={editJobForm.requirements}
+                  onChange={(e) => setEditJobForm({ ...editJobForm, requirements: e.target.value })}
+                  className="px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#D4AF37] text-xs font-semibold resize-none bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col space-y-1">
+                <label className="text-xs font-bold text-gray-700">Quyền lợi *</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={editJobForm.benefits}
+                  onChange={(e) => setEditJobForm({ ...editJobForm, benefits: e.target.value })}
+                  className="px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#D4AF37] text-xs font-semibold resize-none bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col space-y-1">
+                <label className="text-xs font-bold text-gray-700">Thời gian làm việc *</label>
+                <input
+                  type="text"
+                  required
+                  value={editJobForm.workingTime}
+                  onChange={(e) => setEditJobForm({ ...editJobForm, workingTime: e.target.value })}
+                  className="px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#D4AF37] text-xs font-semibold bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col space-y-1">
+                <label className="text-xs font-bold text-gray-700">Địa chỉ làm việc *</label>
+                <input
+                  type="text"
+                  required
+                  value={editJobForm.workingAddress}
+                  onChange={(e) => setEditJobForm({ ...editJobForm, workingAddress: e.target.value })}
+                  className="px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#D4AF37] text-xs font-semibold bg-white"
                 />
               </div>
 
@@ -1245,19 +1448,19 @@ export default function Jobs() {
                   </div>
 
                   {/* Referral Commission Banner */}
-                  {selectedJobDetail.skills.some(s => s.toLowerCase() === 'headhunt') && (
+                  {(selectedJobDetail.isHeadhunt || selectedJobDetail.skills.some(s => s.toLowerCase() === 'headhunt')) && (
                     <div className="p-3.5 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 flex items-center justify-between text-xs text-[#B8860B] font-bold">
                       <span className="flex items-center space-x-1.5">
                         <Award size={16} className="text-[#D4AF37]" />
-                        <span>Phí giới thiệu ứng viên: <strong className="text-[#B8860B]">3.000.000 VND - 5.000.000 VND (hoặc 15% hoa hồng)</strong></span>
+                        <span>Phí giới thiệu ứng viên: <strong className="text-[#B8860B]">{selectedJobDetail.referralCommission || 'Theo thỏa thuận'}</strong></span>
                       </span>
-                      <span className="bg-[#D4AF37] text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">Hoa hồng cao</span>
+                      <span className="bg-[#D4AF37] text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">Hoa hồng</span>
                     </div>
                   )}
 
                   {/* Action buttons (Ứng tuyển ngay / Tự ứng tuyển & Giới thiệu ứng viên & Lưu tin) */}
                   <div className="flex flex-wrap gap-3 pt-2">
-                    {selectedJobDetail.skills.some(s => s.toLowerCase() === 'headhunt') ? (
+                    {(selectedJobDetail.isHeadhunt || selectedJobDetail.skills.some(s => s.toLowerCase() === 'headhunt')) ? (
                       <>
                         <button
                           onClick={() => {
@@ -1345,36 +1548,33 @@ export default function Jobs() {
                   {/* Job Description Text details */}
                   <div className="space-y-4 text-xs font-semibold text-gray-700 leading-relaxed">
                     <h4 className="text-sm font-black text-gray-900">Mô tả công việc</h4>
-                    {selectedJobDetail.description ? (
-                      <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium">
-                        {selectedJobDetail.description}
-                      </div>
-                    ) : (
-                      <ul className="list-disc pl-5 space-y-2 text-gray-600 font-medium">
-                        <li>Xây dựng và triển khai thực hiện các chính sách, quy trình, quy định, chương trình nhân sự nhằm hấp dẫn, duy trì và không ngừng phát huy năng lực của nguồn nhân lực, đáp ứng các chiến lược và mục tiêu chung của công ty.</li>
-                        <li>Lập kế hoạch, triển khai và quản lý các chức năng của phòng HC-NS: Tuyển dụng, Bố trí nhân sự, Tiền lương, Chế độ phúc lợi, Quan hệ lao động và Đào tạo phát triển.</li>
-                        <li>Trực tiếp tìm kiếm, tuyển chọn nhân sự trung và cao cấp theo chỉ tiêu.</li>
-                        <li>Tư vấn và hỗ trợ Ban Giám Đốc giải quyết các sự vụ hành chính nhân sự phát sinh một cách nhanh chóng, đúng luật lao động.</li>
-                      </ul>
-                    )}
+                    <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm">
+                      {selectedJobDetail.description || 'Chưa cập nhật'}
+                    </div>
 
-                    <h4 className="text-sm font-black text-gray-900 pt-4">YÊU CẦU CÔNG VIỆC CHÌA KHÓA</h4>
-                    <ul className="list-disc pl-5 space-y-2 text-gray-600 font-medium">
-                      <li>Tốt nghiệp Đại học trở lên chuyên ngành Quản trị nhân lực, Luật, Kinh tế hoặc liên quan.</li>
-                      <li>Kinh nghiệm tối thiểu 3-5 năm ở vị trí tương đương, ưu tiên ứng viên có kinh nghiệm trong ngành Headhunt hoặc quy mô công ty trên 200 người.</li>
-                      <li>Hiểu biết sâu sắc về Luật lao động Việt Nam, BHXH, thuế TNCN.</li>
-                      <li>Kỹ năng giao tiếp, đàm phán thuyết phục và giải quyết vấn đề xuất sắc.</li>
-                      <li>Có tư duy nhạy bén về thị trường lao động và khả năng thu hút nhân tài xuất sắc.</li>
-                    </ul>
+                    <h4 className="text-sm font-black text-gray-900 pt-4">YÊU CẦU CÔNG VIỆC</h4>
+                    <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm">
+                      {selectedJobDetail.requirements || 'Chưa cập nhật'}
+                    </div>
 
                     <h4 className="text-sm font-black text-gray-900 pt-4">QUYỀN LỢI ĐƯỢC HƯỞNG</h4>
-                    <ul className="list-disc pl-5 space-y-2 text-gray-600 font-medium">
-                      <li>Mức thu nhập cạnh tranh dựa trên năng lực chuyên môn thực tế.</li>
-                      <li>Lương tháng 13 + thưởng hiệu quả công việc cá nhân và doanh số công ty.</li>
-                      <li>Đóng đầy đủ BHXH, BHYT, BHTN theo quy định Nhà nước hiện hành.</li>
-                      <li>Tham gia các chương trình teambuilding, nghỉ mát hàng năm cùng cộng đồng đối tác.</li>
-                      <li>Môi trường làm việc năng động, sáng tạo và nhiều cơ hội thăng tiến lên cấp quản lý cấp cao.</li>
-                    </ul>
+                    <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm">
+                      {selectedJobDetail.benefits || 'Chưa cập nhật'}
+                    </div>
+
+                    {(selectedJobDetail.workingTime || selectedJobDetail.workingAddress) && (
+                      <>
+                        <h4 className="text-sm font-black text-gray-900 pt-4">THỜI GIAN & ĐỊA ĐIỂM LÀM VIỆC</h4>
+                        <div className="space-y-2 text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm font-semibold">
+                          {selectedJobDetail.workingTime && (
+                            <p className="flex items-center space-x-1.5"><span className="text-gray-400 font-bold">Thời gian:</span> <span className="text-gray-700 font-medium">{selectedJobDetail.workingTime}</span></p>
+                          )}
+                          {selectedJobDetail.workingAddress && (
+                            <p className="flex items-start space-x-1.5"><span className="text-gray-400 font-bold flex-shrink-0">Địa chỉ:</span> <span className="text-gray-700 font-medium">{selectedJobDetail.workingAddress}</span></p>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                 </div>

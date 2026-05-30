@@ -28,6 +28,12 @@ export interface Job {
   level: string;
   type: string;
   description?: string;
+  requirements?: string;
+  benefits?: string;
+  workingTime?: string;
+  workingAddress?: string;
+  isHeadhunt?: boolean;
+  referralCommission?: string;
   created_at: string;
   posted_by?: string; // User email who posted
   approved: boolean; // Approved by admin
@@ -43,6 +49,7 @@ export interface Member {
   linkedin: string;
   experience: number;
   created_at: string;
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface ContactMessage {
@@ -93,162 +100,9 @@ export interface CommunityActivity {
   created_at: string;
 }
 
-const DEFAULT_JOBS: Job[] = [
-  {
-    id: 'job-1',
-    title: 'Senior Talent Acquisition Partner',
-    company: 'Tập đoàn Công nghệ NextGen',
-    salary: '25,000,000 - 35,000,000 VND',
-    location: 'TP. Hồ Chí Minh',
-    skills: ['IT Recruitment', 'Headhunting', 'Employer Branding', 'Headhunt'],
-    level: 'Senior',
-    type: 'Full-time',
-    description: 'Chịu trách nhiệm tìm kiếm nhân sự cấp trung, cấp cao cho mảng Công nghệ thông tin của tập đoàn...',
-    created_at: new Date().toISOString(),
-    posted_by: 'admin@sntn.vn',
-    approved: true,
-  },
-  {
-    id: 'job-2',
-    title: 'HRBP Manager',
-    company: 'Công ty Cổ phần Bán lẻ SunGroup',
-    salary: '35,000,000 - 45,000,000 VND',
-    location: 'Hà Nội',
-    skills: ['HR Strategy', 'Employee Relations', 'Performance Management'],
-    level: 'Manager',
-    type: 'Full-time',
-    description: 'Đồng hành cùng ban lãnh đạo mảng bán lẻ thiết lập các kế hoạch phát triển nhân sự toàn diện...',
-    created_at: new Date().toISOString(),
-    posted_by: 'admin@sntn.vn',
-    approved: true,
-  },
-  {
-    id: 'job-3',
-    title: 'Headhunter Consultant (HR Tech)',
-    company: 'Job Service',
-    salary: 'Cạnh tranh + Commission',
-    location: 'TP. Hồ Chí Minh',
-    skills: ['Executive Search', 'Client Relationship', 'Sourcing', 'Headhunt'],
-    level: 'Senior',
-    type: 'Hybrid',
-    description: 'Làm việc trực tiếp cùng chị Hàng Nghĩa Thuận để săn tài năng cấp cao cho các doanh nghiệp đối tác lớn...',
-    created_at: new Date().toISOString(),
-    posted_by: 'admin@sntn.vn',
-    approved: true,
-  },
-  {
-    id: 'job-4',
-    title: 'Giám đốc Nhân sự (CHRO)',
-    company: 'Tập đoàn Sản xuất & Logistics Minh Phát',
-    salary: '60,000,000 - 80,000,000 VND',
-    location: 'Toàn quốc',
-    skills: ['HR Management', 'Organizational Development', 'Union Negotiations'],
-    level: 'Director',
-    type: 'Full-time',
-    description: 'Định hình chiến lược nhân sự dài hạn phục vụ cho kế hoạch mở rộng chi nhánh quốc tế của tập đoàn...',
-    created_at: new Date().toISOString(),
-    posted_by: 'admin@sntn.vn',
-    approved: true,
-  },
-  {
-    id: 'job-5',
-    title: 'Chuyên viên Tuyển dụng & Đào tạo',
-    company: 'Đồng Tâm Group',
-    salary: '15,000,000 - 22,000,000 VND',
-    location: 'Long An',
-    skills: ['Recruitment', 'Training Plan', 'Internal Communication'],
-    level: 'Junior / Middle',
-    type: 'Full-time',
-    description: 'Thực hiện công tác thu hút ứng viên ngành sản xuất vật liệu và điều phối các khóa đào tạo nội bộ...',
-    created_at: new Date().toISOString(),
-    posted_by: 'admin@sntn.vn',
-    approved: true,
-  }
-];
+const DEFAULT_JOBS: Job[] = [];
 
-const DEFAULT_ACTIVITIES: CommunityActivity[] = [
-  {
-    id: 'act-1',
-    title: 'Workshop: Xây dựng Personal Brand trên LinkedIn',
-    category: 'Workshop',
-    description: 'Workshop chia sẻ kinh nghiệm xây dựng thương hiệu cá nhân hiệu quả.',
-    date: '15/04/2024',
-    attendees: 45,
-    likes: ['partner@sntn.vn'],
-    comments: [
-      {
-        id: 'c-1',
-        userEmail: 'partner@sntn.vn',
-        userName: 'Nguyễn Minh Partner',
-        userRole: 'partner',
-        content: 'Chương trình cực kỳ thực chiến, rất mong chờ buổi Offline tiếp theo!',
-        created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-      }
-    ],
-    imageType: 'books',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'act-2',
-    title: 'Networking Night: Kết nối C-Level Executives',
-    category: 'Networking',
-    description: 'Buổi gặp gỡ kết nối với các nhà quản lý cấp cao.',
-    date: '10/04/2024',
-    attendees: 60,
-    likes: [],
-    comments: [],
-    imageType: 'handshake',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'act-3',
-    title: 'Seminar: Xu hướng HR 2024',
-    category: 'Seminar',
-    description: 'Cập nhật xu hướng và công nghệ mới trong quản trị nhân sự.',
-    date: '05/04/2024',
-    attendees: 120,
-    likes: ['admin@sntn.vn'],
-    comments: [],
-    imageType: 'briefcase',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'act-4',
-    title: 'Workshop: Kỹ năng phỏng vấn cho ứng viên cấp cao',
-    category: 'Workshop',
-    description: 'Buổi thực hành kỹ năng phỏng vấn tuyển chọn, thiết lập AOP thực chiến.',
-    date: '20/03/2024',
-    attendees: 35,
-    likes: [],
-    comments: [],
-    imageType: 'target',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'act-5',
-    title: 'Year-end Party 2023: Gala kết nối cộng đồng',
-    category: 'Sự kiện',
-    description: 'Sự kiện giao lưu cuối năm ấm cúng dành cho toàn thể thành viên.',
-    date: '28/12/2023',
-    attendees: 150,
-    likes: ['partner@sntn.vn', 'admin@sntn.vn'],
-    comments: [],
-    imageType: 'party',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'act-6',
-    title: 'Coffee Talk: Chuyện nghề IT Recruitment',
-    category: 'Networking',
-    description: 'Thảo luận thân mật về khó khăn và giải pháp tuyển dụng nhân sự IT.',
-    date: '12/12/2023',
-    attendees: 25,
-    likes: [],
-    comments: [],
-    imageType: 'coffee',
-    created_at: new Date().toISOString()
-  }
-];
+const DEFAULT_ACTIVITIES: CommunityActivity[] = [];
 
 export const dbHelper = {
   // --- AUTH LAYER ---
@@ -302,6 +156,11 @@ export const dbHelper = {
   // --- JOBS API ---
   async getJobs(): Promise<Job[]> {
     if (typeof window !== 'undefined') {
+      if (!localStorage.getItem('sntn_cleared_mock_data_v3')) {
+        localStorage.removeItem('sntn_jobs');
+        localStorage.removeItem('sntn_activities');
+        localStorage.setItem('sntn_cleared_mock_data_v3', 'true');
+      }
       const local = localStorage.getItem('sntn_jobs');
       if (local) {
         return JSON.parse(local);
@@ -387,20 +246,50 @@ export const dbHelper = {
   },
 
   // --- MEMBERS API (COMMUNITY REGISTRATION) ---
-  async registerMember(member: Omit<Member, 'id' | 'created_at'>): Promise<Member> {
+  async getMembers(): Promise<Member[]> {
+    if (typeof window === 'undefined') return [];
+    const local = localStorage.getItem('sntn_members');
+    return local ? JSON.parse(local) : [];
+  },
+
+  async registerMember(member: Omit<Member, 'id' | 'created_at' | 'status'>): Promise<Member> {
     const newMember: Member = {
       ...member,
+      status: 'pending',
       id: 'member-' + Math.random().toString(36).substr(2, 9),
       created_at: new Date().toISOString(),
     };
 
     if (typeof window !== 'undefined') {
-      const local = localStorage.getItem('sntn_members');
-      const members = local ? JSON.parse(local) : [];
+      const members = await this.getMembers();
       members.push(newMember);
       localStorage.setItem('sntn_members', JSON.stringify(members));
     }
     return newMember;
+  },
+
+  async approveMember(memberId: string): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+    const members = await this.getMembers();
+    const idx = members.findIndex(m => m.id === memberId);
+    if (idx !== -1) {
+      members[idx].status = 'approved';
+      localStorage.setItem('sntn_members', JSON.stringify(members));
+      return true;
+    }
+    return false;
+  },
+
+  async rejectMember(memberId: string): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+    const members = await this.getMembers();
+    const idx = members.findIndex(m => m.id === memberId);
+    if (idx !== -1) {
+      members[idx].status = 'rejected';
+      localStorage.setItem('sntn_members', JSON.stringify(members));
+      return true;
+    }
+    return false;
   },
 
   // --- CONTACT MESSAGES API ---
