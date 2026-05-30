@@ -1296,47 +1296,45 @@ export default function Community() {
               <X size={20} />
             </button>
 
-            <div className="overflow-y-auto pr-1">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Left side: Image Banner */}
-                <div className="w-full h-64 md:h-[400px] rounded-2xl bg-gray-50 border border-[#D4AF37]/15 overflow-hidden flex items-center justify-center text-6xl shadow-inner relative self-start">
-                  {selectedActivityDetail.images && selectedActivityDetail.images.length > 0 ? (
-                    <ActivityImagesCarousel images={selectedActivityDetail.images} />
-                  ) : (
-                    emojiMap[selectedActivityDetail.imageType || 'books']
-                  )}
+            <div className="overflow-y-auto pr-1 space-y-6">
+              {/* Image Banner */}
+              <div className="w-full max-w-3xl mx-auto h-64 md:h-[450px] rounded-2xl bg-gray-50 border border-[#D4AF37]/15 overflow-hidden flex items-center justify-center text-6xl shadow-inner relative flex-shrink-0">
+                {selectedActivityDetail.images && selectedActivityDetail.images.length > 0 ? (
+                  <ActivityImagesCarousel images={selectedActivityDetail.images} />
+                ) : (
+                  emojiMap[selectedActivityDetail.imageType || 'books']
+                )}
+              </div>
+
+              {/* Content Wrapper */}
+              <div className="w-full max-w-3xl mx-auto space-y-6">
+                {/* Tag & Meta Info */}
+                <div className="space-y-3">
+                  <span className="inline-block text-xs font-black text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-3 py-1 rounded-full">
+                    {selectedActivityDetail.category}
+                  </span>
+
+                  <h3 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">
+                    {selectedActivityDetail.title}
+                  </h3>
+
+                  <div className="flex flex-wrap gap-4 text-xs font-bold text-gray-500 pt-2 border-t border-b border-gray-100 py-3">
+                    <span className="flex items-center space-x-1.5">
+                      <Calendar size={15} className="text-[#D4AF37]" />
+                      <span>Thời gian: {selectedActivityDetail.date}</span>
+                    </span>
+                    <span className="flex items-center space-x-1.5">
+                      <Users size={15} className="text-[#D4AF37]" />
+                      <span>Dự kiến: {selectedActivityDetail.attendees} người tham gia</span>
+                    </span>
+                  </div>
                 </div>
 
-                {/* Right side: Content */}
-                <div className="space-y-6">
-                  {/* Tag & Meta Info */}
-                  <div className="space-y-3">
-                    <span className="inline-block text-xs font-black text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-3 py-1 rounded-full">
-                      {selectedActivityDetail.category}
-                    </span>
-
-                    <h3 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">
-                      {selectedActivityDetail.title}
-                    </h3>
-
-                    <div className="flex flex-wrap gap-4 text-xs font-bold text-gray-500 pt-2 border-t border-b border-gray-100 py-3">
-                      <span className="flex items-center space-x-1.5">
-                        <Calendar size={15} className="text-[#D4AF37]" />
-                        <span>Thời gian: {selectedActivityDetail.date}</span>
-                      </span>
-                      <span className="flex items-center space-x-1.5">
-                        <Users size={15} className="text-[#D4AF37]" />
-                        <span>Dự kiến: {selectedActivityDetail.attendees} người tham gia</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider text-[#B8860B]">Nội dung chi tiết</h4>
-                    <div className="text-sm text-gray-700 leading-relaxed font-semibold whitespace-pre-line bg-[#FDFBF7]/60 p-5 rounded-2xl border border-[#D4AF37]/10 shadow-sm">
-                      {selectedActivityDetail.description}
-                    </div>
+                {/* Description */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider text-[#B8860B]">Nội dung chi tiết</h4>
+                  <div className="text-sm text-gray-700 leading-relaxed font-semibold whitespace-pre-line bg-[#FDFBF7]/60 p-5 md:p-6 rounded-2xl border border-[#D4AF37]/10 shadow-sm">
+                    {selectedActivityDetail.description}
                   </div>
                 </div>
               </div>
