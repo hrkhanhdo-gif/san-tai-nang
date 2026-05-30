@@ -104,6 +104,7 @@ export default function Community() {
   const [activeTab, setActiveTab] = useState<'join' | 'activities' | 'members' | 'applications'>('join');
   const [activitiesList, setActivitiesList] = useState<CommunityActivity[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
+  const [selectedActivityDetail, setSelectedActivityDetail] = useState<CommunityActivity | null>(null);
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [members, setMembers] = useState<Member[]>([]);
@@ -156,13 +157,35 @@ export default function Community() {
       const updated = await dbHelper.getMembers();
       setMembers(updated);
       
-      const subject = encodeURIComponent("[JOB SERVICE] Thông báo phê duyệt hồ sơ gia nhập Cộng đồng Săn Tài Năng");
-      const body = encodeURIComponent(`Chào ${member.fullName},\n\nHồ sơ gia nhập Cộng đồng Săn Tài Năng của bạn đã được phê duyệt thành công.\nDưới đây là thông tin đăng nhập của bạn:\nEmail: ${member.email}\nMật khẩu ban đầu: Matkhau123\n\nTrân trọng,\nBan Quản Trị JOB SERVICE`);
+      const subjectText = "[JOB SERVICE] Thông báo phê duyệt hồ sơ gia nhập Cộng đồng Săn Tài Năng";
+      const bodyText = `Chào ${member.fullName},\n\nHồ sơ gia nhập Cộng đồng Săn Tài Năng của bạn đã được phê duyệt thành công.\nDưới đây là thông tin đăng nhập của bạn:\nEmail: ${member.email}\nMật khẩu ban đầu: Matkhau123\n\nTrân trọng,\nBan Quản Trị JOB SERVICE`;
       
-      // Trigger native email client without opening blank tab
-      window.location.href = `mailto:${member.email}?subject=${subject}&body=${body}`;
-      
-      alert(`Đã phê duyệt hồ sơ của ${member.fullName}! Mật khẩu đăng nhập ban đầu: Matkhau123. Hệ thống đã mở ứng dụng gửi thư.`);
+      try {
+        const response = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: member.email,
+            subject: subjectText,
+            text: bodyText
+          })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          alert(`Đã phê duyệt và hệ thống đã TỰ ĐỘNG gửi email thông báo mật khẩu đến ${member.email}!`);
+          return;
+        }
+        throw new Error(data.error || 'SMTP not configured');
+      } catch (err) {
+        console.log('Automated email failed, falling back to mailto:', err);
+        // Fallback
+        const subject = encodeURIComponent(subjectText);
+        const body = encodeURIComponent(bodyText);
+        window.location.href = `mailto:${member.email}?subject=${subject}&body=${body}`;
+        alert(`Đã phê duyệt hồ sơ của ${member.fullName}! Mật khẩu đăng nhập ban đầu: Matkhau123. (Do máy chủ chưa cấu hình gửi thư tự động, hệ thống đã mở ứng dụng gửi thư cục bộ của bạn).`);
+      }
     }
   };
 
@@ -938,12 +961,24 @@ export default function Community() {
                       </span>
 
                       {/* Title & Description */}
-                      <h4 className="text-sm md:text-base font-black text-gray-900 mt-3 mb-2 leading-snug">
+                      <h4 
+                        className="text-sm md:text-base font-black text-gray-900 mt-3 mb-2 leading-snug cursor-pointer hover:text-[#D4AF37] transition-colors"
+                        onClick={() => setSelectedActivityDetail(act)}
+                      >
                         {act.title}
                       </h4>
-                      <p className="text-xs text-gray-500 font-semibold leading-relaxed mb-6">
+                      <p 
+                        className="text-xs text-gray-500 font-semibold leading-relaxed mb-3 line-clamp-3 cursor-pointer hover:text-gray-700 transition-colors"
+                        onClick={() => setSelectedActivityDetail(act)}
+                      >
                         {act.description}
                       </p>
+                      <button
+                        onClick={() => setSelectedActivityDetail(act)}
+                        className="text-[10px] font-black uppercase text-[#B8860B] hover:text-[#D4AF37] mb-6 transition-colors block"
+                      >
+                        Xem chi tiết bài viết →
+                      </button>
 
                       {/* Meta information */}
                       <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 border-t border-gray-100 pt-4 mb-4">
@@ -1189,6 +1224,76 @@ export default function Community() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Activity Detail Modal */}
+      {selectedActivityDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <MotionDiv
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-2xl bg-white rounded-3xl border border-[#D4AF37]/20 shadow-2xl p-6 md:p-8 relative overflow-hidden max-h-[90vh] flex flex-col"
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedActivityDetail(null)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 z-10 bg-white/80 p-1.5 rounded-full shadow-sm hover:scale-110 transition-all"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="overflow-y-auto pr-1 space-y-6">
+              {/* Image Banner */}
+              <div className="w-full h-64 md:h-80 rounded-2xl bg-gray-50 border border-[#D4AF37]/15 overflow-hidden flex items-center justify-center text-6xl shadow-inner relative flex-shrink-0">
+                {selectedActivityDetail.images && selectedActivityDetail.images.length > 0 ? (
+                  <ActivityImagesCarousel images={selectedActivityDetail.images} />
+                ) : (
+                  emojiMap[selectedActivityDetail.imageType || 'books']
+                )}
+              </div>
+
+              {/* Tag & Meta Info */}
+              <div className="space-y-3">
+                <span className="inline-block text-xs font-black text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-3 py-1 rounded-full">
+                  {selectedActivityDetail.category}
+                </span>
+
+                <h3 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">
+                  {selectedActivityDetail.title}
+                </h3>
+
+                <div className="flex flex-wrap gap-4 text-xs font-bold text-gray-500 pt-2 border-t border-b border-gray-100 py-3">
+                  <span className="flex items-center space-x-1.5">
+                    <Calendar size={15} className="text-[#D4AF37]" />
+                    <span>Thời gian: {selectedActivityDetail.date}</span>
+                  </span>
+                  <span className="flex items-center space-x-1.5">
+                    <Users size={15} className="text-[#D4AF37]" />
+                    <span>Dự kiến: {selectedActivityDetail.attendees} người tham gia</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider text-[#B8860B]">Nội dung chi tiết</h4>
+                <div className="text-sm text-gray-700 leading-relaxed font-semibold whitespace-pre-line bg-[#FDFBF7]/60 p-5 rounded-2xl border border-[#D4AF37]/10 shadow-sm">
+                  {selectedActivityDetail.description}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer buttons */}
+            <div className="border-t border-gray-100 pt-4 mt-6 flex justify-end flex-shrink-0">
+              <button
+                onClick={() => setSelectedActivityDetail(null)}
+                className="px-6 py-2.5 rounded-xl bg-gray-950 text-white font-bold text-xs uppercase tracking-wider hover:bg-[#D4AF37] transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </MotionDiv>
+        </div>
       )}
     </div>
   );

@@ -194,19 +194,43 @@ export default function Jobs() {
 
     // Trigger email client sending application to job poster (posted_by)
     const posterEmail = selectedJob.posted_by || 'ttg.thuanhn@gmail.com';
-    const emailSubject = encodeURIComponent(
-      applyType === 'refer'
-        ? `[JOB SERVICE] Đối tác giới thiệu ứng viên - Vị trí: ${selectedJob.title} - ${selectedJob.company}`
-        : `[JOB SERVICE] Ứng viên ứng tuyển - Vị trí: ${selectedJob.title} - ${selectedJob.company}`
-    );
+    const emailSubjectText = applyType === 'refer'
+      ? `[JOB SERVICE] Đối tác giới thiệu ứng viên - Vị trí: ${selectedJob.title} - ${selectedJob.company}`
+      : `[JOB SERVICE] Ứng viên ứng tuyển - Vị trí: ${selectedJob.title} - ${selectedJob.company}`;
     
-    const emailBody = encodeURIComponent(
-      applyType === 'refer'
-        ? `Chào bạn,\n\nĐối tác sau đây đã giới thiệu ứng viên cho công việc "${selectedJob.title}" của bạn trên Cộng đồng Săn Tài Năng:\n\nThông tin người giới thiệu:\n- Họ tên: ${referrerForm.referrerName}\n- Email: ${referrerForm.referrerEmail}\n- SĐT: ${referrerForm.referrerPhone}\n\nThông tin ứng viên được giới thiệu:\n- Họ tên: ${applyForm.fullName}\n- Email: ${applyForm.email}\n- SĐT: ${applyForm.phone}\n\n(Lưu ý: CV của ứng viên đã được lưu trữ trên hệ thống Săn Tài Năng. Vui lòng kiểm tra trong trang quản trị).\n\nTrân trọng,\nJOB SERVICE`
-        : `Chào bạn,\n\nỨng viên sau đây đã ứng tuyển vào công việc "${selectedJob.title}" của bạn trên Cộng đồng Săn Tài Năng:\n\nThông tin ứng viên:\n- Họ tên: ${applyForm.fullName}\n- Email: ${applyForm.email}\n- SĐT: ${applyForm.phone}\n\n(Lưu ý: CV của ứng viên đã được lưu trữ trên hệ thống Săn Tài Năng. Vui lòng kiểm tra trong trang quản trị).\n\nTrân trọng,\nJOB SERVICE`
-    );
+    const emailBodyText = applyType === 'refer'
+      ? `Chào bạn,\n\nĐối tác sau đây đã giới thiệu ứng viên cho công việc "${selectedJob.title}" của bạn trên Cộng đồng Săn Tài Năng:\n\nThông tin người giới thiệu:\n- Họ tên: ${referrerForm.referrerName}\n- Email: ${referrerForm.referrerEmail}\n- SĐT: ${referrerForm.referrerPhone}\n\nThông tin ứng viên được giới thiệu:\n- Họ tên: ${applyForm.fullName}\n- Email: ${applyForm.email}\n- SĐT: ${applyForm.phone}\n\n(Lưu ý: CV của ứng viên đã được đính kèm hoặc lưu trữ trên hệ thống Săn Tài Năng. Vui lòng kiểm tra trong thư và trang quản trị).\n\nTrân trọng,\nJOB SERVICE`
+      : `Chào bạn,\n\nỨng viên sau đây đã ứng tuyển vào công việc "${selectedJob.title}" của bạn trên Cộng đồng Săn Tài Năng:\n\nThông tin ứng viên:\n- Họ tên: ${applyForm.fullName}\n- Email: ${applyForm.email}\n- SĐT: ${applyForm.phone}\n\n(Lưu ý: CV của ứng viên đã được đính kèm hoặc lưu trữ trên hệ thống Săn Tài Năng. Vui lòng kiểm tra trong thư và trang quản trị).\n\nTrân trọng,\nJOB SERVICE`;
 
-    window.location.href = `mailto:${posterEmail}?subject=${emailSubject}&body=${emailBody}`;
+    const cvFilename = `CV_${applyForm.fullName.replace(/\s+/g, '_')}.pdf`;
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: posterEmail,
+          subject: emailSubjectText,
+          text: emailBodyText,
+          cvLink: applyForm.cvLink,
+          cvName: cvFilename
+        })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        console.log('Automated email sent to poster!');
+      } else {
+        throw new Error(data.error || 'Server SMTP not configured');
+      }
+    } catch (err) {
+      console.log('Automated email failed, falling back to mailto:', err);
+      // Fallback to mailto link
+      const emailSubject = encodeURIComponent(emailSubjectText);
+      const emailBody = encodeURIComponent(emailBodyText);
+      window.location.href = `mailto:${posterEmail}?subject=${emailSubject}&body=${emailBody}`;
+    }
 
     setApplyForm({
       fullName: '',
