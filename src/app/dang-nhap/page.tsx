@@ -48,17 +48,35 @@ const LinkedinIcon = ({ size = 24, ...props }: IconProps) => (
 );
 
 
+import { dbHelper } from '@/lib/supabase';
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSuccess(true);
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 2000);
+    const user = await dbHelper.login(email, password);
+    if (user) {
+      setIsSuccess(true);
+      window.dispatchEvent(new Event('sntn_login_change'));
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+    }
+  };
+
+  const handleQuickLogin = async (role: 'admin' | 'partner') => {
+    const email = role === 'admin' ? 'admin@sntn.vn' : 'partner@sntn.vn';
+    const user = await dbHelper.login(email);
+    if (user) {
+      setIsSuccess(true);
+      window.dispatchEvent(new Event('sntn_login_change'));
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+    }
   };
 
   return (
@@ -79,7 +97,7 @@ export default function Login() {
           <span>Về Trang chủ</span>
         </Link>
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h2 className="text-2xl font-black text-gray-900">Đăng nhập tài khoản</h2>
           <p className="text-xs text-gray-400 font-bold mt-1.5 uppercase tracking-wider">SĂN TÀI NĂNG HR Portal</p>
         </div>
@@ -93,7 +111,31 @@ export default function Login() {
             <p className="text-xs text-gray-400 font-semibold">Đang chuyển hướng về trang chủ...</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5">
+            {/* Quick Demo Logins */}
+            <div className="bg-[#FDFBF7] border border-[#D4AF37]/20 p-4 rounded-2xl space-y-2.5">
+              <span className="text-[10px] font-extrabold text-[#B8860B] uppercase tracking-wider block text-center">
+                Đăng nhập nhanh để kiểm thử phân quyền
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleQuickLogin('admin')}
+                  className="py-2 px-3 bg-gray-900 hover:bg-[#D4AF37] text-white rounded-xl text-xs font-bold transition-colors"
+                >
+                  Admin (Ban quản trị)
+                </button>
+                <button
+                  onClick={() => handleQuickLogin('partner')}
+                  className="py-2 px-3 bg-white hover:bg-gray-50 border border-[#D4AF37]/30 text-gray-800 rounded-xl text-xs font-bold transition-colors"
+                >
+                  Partner (Đối tác HR)
+                </button>
+              </div>
+              <p className="text-[9px] text-gray-400 font-semibold text-center">
+                Admin duyệt việc làm & đăng sự kiện. Partner đăng tuyển, xem CV & tương tác.
+              </p>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email */}
               <div className="flex flex-col space-y-1.5">
@@ -142,7 +184,7 @@ export default function Login() {
             </form>
 
             {/* Divider */}
-            <div className="relative flex py-2 items-center">
+            <div className="relative flex py-1 items-center">
               <div className="flex-grow border-t border-gray-100"></div>
               <span className="flex-shrink mx-4 text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">Hoặc kết nối qua</span>
               <div className="flex-grow border-t border-gray-100"></div>
@@ -151,14 +193,14 @@ export default function Login() {
             {/* Social Logins */}
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => { setIsSuccess(true); setTimeout(() => { window.location.href = '/'; }, 1500); }}
+                onClick={() => handleQuickLogin('partner')}
                 className="flex items-center justify-center space-x-2 py-2.5 rounded-xl border border-gray-200 hover:border-red-500 hover:bg-red-50/5 text-gray-700 text-xs font-bold transition-all"
               >
                 <ChromeIcon size={14} className="text-red-500" />
                 <span>Google</span>
               </button>
               <button
-                onClick={() => { setIsSuccess(true); setTimeout(() => { window.location.href = '/'; }, 1500); }}
+                onClick={() => handleQuickLogin('partner')}
                 className="flex items-center justify-center space-x-2 py-2.5 rounded-xl border border-gray-200 hover:border-[#0077B5] hover:bg-[#0077B5]/5 text-gray-700 text-xs font-bold transition-all"
               >
                 <LinkedinIcon size={14} className="text-[#0077B5]" />
@@ -167,7 +209,7 @@ export default function Login() {
             </div>
 
             {/* Join trigger */}
-            <p className="text-center text-xs text-gray-500 font-semibold mt-4">
+            <p className="text-center text-xs text-gray-500 font-semibold mt-2">
               Chưa có tài khoản cộng đồng?{' '}
               <Link href="/tham-gia-ngay" className="text-[#B8860B] font-bold hover:underline">
                 Đăng ký ngay
