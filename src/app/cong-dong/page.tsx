@@ -151,6 +151,56 @@ export default function Community() {
     };
   }, []);
 
+  const handleOpenCV = (cvLink: string, fullName: string) => {
+    if (!cvLink) return;
+    const cleanName = fullName.replace(/[^a-zA-Z0-9À-ỹ\s]/g, '').replace(/\s+/g, '_');
+    const filename = `CV_${cleanName}.pdf`;
+
+    if (cvLink.startsWith('data:')) {
+      try {
+        const parts = cvLink.split(';base64,');
+        if (parts.length === 2) {
+          const contentType = parts[0].split(':')[1] || 'application/pdf';
+          const byteCharacters = atob(parts[1]);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: contentType });
+          const blobUrl = URL.createObjectURL(blob);
+          
+          if (contentType.toLowerCase().includes('pdf')) {
+            const newTab = window.open();
+            if (newTab) {
+              newTab.location.href = blobUrl;
+            } else {
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              link.download = filename;
+              link.click();
+            }
+          } else {
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            const ext = contentType.includes('word') || contentType.includes('officedocument') ? 'docx' : 'pdf';
+            link.download = `CV_${cleanName}.${ext}`;
+            link.click();
+          }
+          return;
+        }
+      } catch (e) {
+        console.error('Error decoding base64 CV:', e);
+      }
+    }
+    
+    const link = document.createElement('a');
+    link.href = cvLink;
+    link.target = '_blank';
+    link.download = filename;
+    link.click();
+  };
+
   const handleApproveMember = async (member: Member) => {
     const success = await dbHelper.approveMember(member.id);
     if (success) {
@@ -183,8 +233,9 @@ export default function Community() {
         // Fallback
         const subject = encodeURIComponent(subjectText);
         const body = encodeURIComponent(bodyText);
+        // Display alert first to ensure the user's action registers as a valid interaction gesture for opening the mail app
+        alert(`Đã phê duyệt hồ sơ của ${member.fullName}! Mật khẩu đăng nhập ban đầu: Matkhau123. (Do máy chủ chưa cấu hình gửi thư tự động, hệ thống sẽ mở ứng dụng gửi thư cục bộ để bạn gửi thư thủ công).`);
         window.location.href = `mailto:${member.email}?subject=${subject}&body=${body}`;
-        alert(`Đã phê duyệt hồ sơ của ${member.fullName}! Mật khẩu đăng nhập ban đầu: Matkhau123. (Do máy chủ chưa cấu hình gửi thư tự động, hệ thống đã mở ứng dụng gửi thư cục bộ của bạn).`);
       }
     }
   };
@@ -1202,10 +1253,13 @@ export default function Community() {
                         </td>
                         <td className="p-4 space-y-2">
                           {app.cvLink && (
-                            <a href={app.cvLink} target="_blank" rel="noreferrer" className="inline-flex items-center space-x-1 text-[#B8860B] hover:underline text-[11px] font-bold">
+                            <button
+                              onClick={() => handleOpenCV(app.cvLink, app.fullName)}
+                              className="inline-flex items-center space-x-1 text-[#B8860B] hover:underline text-[11px] font-bold bg-transparent border-none cursor-pointer text-left"
+                            >
                               <Eye size={12} />
                               <span>Mở CV cá nhân</span>
-                            </a>
+                            </button>
                           )}
                           {app.linkedin && (
                             <a href={app.linkedin} target="_blank" rel="noreferrer" className="block text-[#0077B5] hover:underline text-[10px] font-bold mt-1">
@@ -1232,7 +1286,7 @@ export default function Community() {
           <MotionDiv
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-2xl bg-white rounded-3xl border border-[#D4AF37]/20 shadow-2xl p-6 md:p-8 relative overflow-hidden max-h-[90vh] flex flex-col"
+            className="w-full max-w-5xl bg-white rounded-3xl border border-[#D4AF37]/20 shadow-2xl p-6 md:p-8 relative overflow-hidden max-h-[90vh] flex flex-col"
           >
             {/* Close Button */}
             <button
@@ -1242,43 +1296,48 @@ export default function Community() {
               <X size={20} />
             </button>
 
-            <div className="overflow-y-auto pr-1 space-y-6">
-              {/* Image Banner */}
-              <div className="w-full h-64 md:h-80 rounded-2xl bg-gray-50 border border-[#D4AF37]/15 overflow-hidden flex items-center justify-center text-6xl shadow-inner relative flex-shrink-0">
-                {selectedActivityDetail.images && selectedActivityDetail.images.length > 0 ? (
-                  <ActivityImagesCarousel images={selectedActivityDetail.images} />
-                ) : (
-                  emojiMap[selectedActivityDetail.imageType || 'books']
-                )}
-              </div>
-
-              {/* Tag & Meta Info */}
-              <div className="space-y-3">
-                <span className="inline-block text-xs font-black text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-3 py-1 rounded-full">
-                  {selectedActivityDetail.category}
-                </span>
-
-                <h3 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">
-                  {selectedActivityDetail.title}
-                </h3>
-
-                <div className="flex flex-wrap gap-4 text-xs font-bold text-gray-500 pt-2 border-t border-b border-gray-100 py-3">
-                  <span className="flex items-center space-x-1.5">
-                    <Calendar size={15} className="text-[#D4AF37]" />
-                    <span>Thời gian: {selectedActivityDetail.date}</span>
-                  </span>
-                  <span className="flex items-center space-x-1.5">
-                    <Users size={15} className="text-[#D4AF37]" />
-                    <span>Dự kiến: {selectedActivityDetail.attendees} người tham gia</span>
-                  </span>
+            <div className="overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Left side: Image Banner */}
+                <div className="w-full h-64 md:h-[400px] rounded-2xl bg-gray-50 border border-[#D4AF37]/15 overflow-hidden flex items-center justify-center text-6xl shadow-inner relative self-start">
+                  {selectedActivityDetail.images && selectedActivityDetail.images.length > 0 ? (
+                    <ActivityImagesCarousel images={selectedActivityDetail.images} />
+                  ) : (
+                    emojiMap[selectedActivityDetail.imageType || 'books']
+                  )}
                 </div>
-              </div>
 
-              {/* Description */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider text-[#B8860B]">Nội dung chi tiết</h4>
-                <div className="text-sm text-gray-700 leading-relaxed font-semibold whitespace-pre-line bg-[#FDFBF7]/60 p-5 rounded-2xl border border-[#D4AF37]/10 shadow-sm">
-                  {selectedActivityDetail.description}
+                {/* Right side: Content */}
+                <div className="space-y-6">
+                  {/* Tag & Meta Info */}
+                  <div className="space-y-3">
+                    <span className="inline-block text-xs font-black text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-3 py-1 rounded-full">
+                      {selectedActivityDetail.category}
+                    </span>
+
+                    <h3 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">
+                      {selectedActivityDetail.title}
+                    </h3>
+
+                    <div className="flex flex-wrap gap-4 text-xs font-bold text-gray-500 pt-2 border-t border-b border-gray-100 py-3">
+                      <span className="flex items-center space-x-1.5">
+                        <Calendar size={15} className="text-[#D4AF37]" />
+                        <span>Thời gian: {selectedActivityDetail.date}</span>
+                      </span>
+                      <span className="flex items-center space-x-1.5">
+                        <Users size={15} className="text-[#D4AF37]" />
+                        <span>Dự kiến: {selectedActivityDetail.attendees} người tham gia</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider text-[#B8860B]">Nội dung chi tiết</h4>
+                    <div className="text-sm text-gray-700 leading-relaxed font-semibold whitespace-pre-line bg-[#FDFBF7]/60 p-5 rounded-2xl border border-[#D4AF37]/10 shadow-sm">
+                      {selectedActivityDetail.description}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

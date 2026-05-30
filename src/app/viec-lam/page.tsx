@@ -41,6 +41,7 @@ export default function Jobs() {
   const [selectedJobDetail, setSelectedJobDetail] = useState<Job | null>(null);
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [isApplySuccess, setIsApplySuccess] = useState(false);
+  const [applyFallbackMailto, setApplyFallbackMailto] = useState('');
   const [applyForm, setApplyForm] = useState({
     fullName: '',
     email: '',
@@ -165,6 +166,56 @@ export default function Jobs() {
     setFilteredJobs(result);
   }, [searchQuery, selectedLocation, selectedLevel, selectedType, jobs, currentUser]);
 
+  const handleOpenCV = (cvLink: string, fullName: string) => {
+    if (!cvLink) return;
+    const cleanName = fullName.replace(/[^a-zA-Z0-9À-ỹ\s]/g, '').replace(/\s+/g, '_');
+    const filename = `CV_${cleanName}.pdf`;
+
+    if (cvLink.startsWith('data:')) {
+      try {
+        const parts = cvLink.split(';base64,');
+        if (parts.length === 2) {
+          const contentType = parts[0].split(':')[1] || 'application/pdf';
+          const byteCharacters = atob(parts[1]);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: contentType });
+          const blobUrl = URL.createObjectURL(blob);
+          
+          if (contentType.toLowerCase().includes('pdf')) {
+            const newTab = window.open();
+            if (newTab) {
+              newTab.location.href = blobUrl;
+            } else {
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              link.download = filename;
+              link.click();
+            }
+          } else {
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            const ext = contentType.includes('word') || contentType.includes('officedocument') ? 'docx' : 'pdf';
+            link.download = `CV_${cleanName}.${ext}`;
+            link.click();
+          }
+          return;
+        }
+      } catch (e) {
+        console.error('Error decoding base64 CV:', e);
+      }
+    }
+    
+    const link = document.createElement('a');
+    link.href = cvLink;
+    link.target = '_blank';
+    link.download = filename;
+    link.click();
+  };
+
   // Submit Application (Save CV)
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,6 +255,7 @@ export default function Jobs() {
 
     const cvFilename = `CV_${applyForm.fullName.replace(/\s+/g, '_')}.pdf`;
 
+    let emailFailed = false;
     try {
       const response = await fetch('/api/send-email', {
         method: 'POST',
@@ -226,10 +278,10 @@ export default function Jobs() {
       }
     } catch (err) {
       console.log('Automated email failed, falling back to mailto:', err);
-      // Fallback to mailto link
+      emailFailed = true;
       const emailSubject = encodeURIComponent(emailSubjectText);
       const emailBody = encodeURIComponent(emailBodyText);
-      window.location.href = `mailto:${posterEmail}?subject=${emailSubject}&body=${emailBody}`;
+      setApplyFallbackMailto(`mailto:${posterEmail}?subject=${emailSubject}&body=${emailBody}`);
     }
 
     setApplyForm({
@@ -245,10 +297,12 @@ export default function Jobs() {
       referrerPhone: ''
     });
 
-    setTimeout(() => {
-      setSelectedJob(null);
-      setIsApplySuccess(false);
-    }, 2500);
+    if (!emailFailed) {
+      setTimeout(() => {
+        setSelectedJob(null);
+        setIsApplySuccess(false);
+      }, 2500);
+    }
   };
 
   // Submit Posted Job
@@ -888,7 +942,11 @@ export default function Jobs() {
             className="w-full max-w-lg bg-white rounded-3xl border border-[#D4AF37]/20 shadow-2xl p-6 md:p-8 relative overflow-hidden"
           >
             <button
-              onClick={() => setSelectedJob(null)}
+              onClick={() => {
+                setSelectedJob(null);
+                setIsApplySuccess(false);
+                setApplyFallbackMailto('');
+              }}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600"
             >
               <X size={20} />
@@ -903,6 +961,25 @@ export default function Jobs() {
                 <p className="text-xs font-bold text-gray-500 leading-relaxed max-w-xs mx-auto">
                   Cảm ơn bạn đã nộp hồ sơ vào vị trí <strong>{selectedJob.title}</strong>. Đại diện cộng đồng sẽ liên hệ lại bạn trong thời gian sớm nhất.
                 </p>
+                {applyFallbackMailto && (
+                  <div className="pt-4 border-t border-gray-100 mt-4 w-full px-4">
+                    <p className="text-[11px] text-amber-700 font-semibold mb-3 leading-relaxed">
+                      Do máy chủ chưa cấu hình gửi email tự động, vui lòng nhấn nút dưới đây để gửi CV và thông tin ứng tuyển của bạn đến Nhà tuyển dụng qua ứng dụng email:
+                    </p>
+                    <a
+                      href={applyFallbackMailto}
+                      onClick={() => {
+                        setApplyFallbackMailto('');
+                        setSelectedJob(null);
+                        setIsApplySuccess(false);
+                      }}
+                      className="inline-flex items-center justify-center px-5 py-2.5 bg-[#B8860B] hover:bg-[#D4AF37] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md space-x-2"
+                    >
+                      <Send size={12} />
+                      <span>Gửi Email Ứng Tuyển Ngay</span>
+                    </a>
+                  </div>
+                )}
               </div>
             ) : (
               <>
@@ -1353,15 +1430,13 @@ export default function Jobs() {
                         </td>
                         <td className="p-4 space-y-2">
                           {app.cvLink && (
-                            <a
-                              href={app.cvLink}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center space-x-1 text-[#B8860B] hover:underline text-[11px] font-bold"
+                            <button
+                              onClick={() => handleOpenCV(app.cvLink, app.fullName)}
+                              className="inline-flex items-center space-x-1 text-[#B8860B] hover:underline text-[11px] font-bold bg-transparent border-none cursor-pointer text-left"
                             >
                               <Eye size={12} />
                               <span>Mở CV cá nhân</span>
-                            </a>
+                            </button>
                           )}
                           {app.linkedin && (
                             <a
