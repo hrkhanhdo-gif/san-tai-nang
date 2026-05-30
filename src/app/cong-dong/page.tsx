@@ -47,6 +47,58 @@ const LinkedinIcon = ({ size = 24, ...props }: IconProps) => (
 import { dbHelper, UserSession, CommunityActivity, Member, JobApplication, Job } from '@/lib/supabase';
 import { MotionDiv } from '@/components/motion';
 
+const ActivityImagesCarousel = ({ images }: { images: string[] }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  if (!images || images.length === 0) return null;
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="relative w-full h-full group/carousel">
+      <img
+        src={images[currentIndex]}
+        alt="Activity"
+        className="w-full h-full object-cover transition-all duration-300"
+      />
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={prevImage}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center text-xs opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+          >
+            ‹
+          </button>
+          <button
+            onClick={nextImage}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center text-xs opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+          >
+            ›
+          </button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1">
+            {images.map((_, idx) => (
+              <div
+                key={idx}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${
+                  idx === currentIndex ? 'bg-[#D4AF37] scale-110' : 'bg-white/60'
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 export default function Community() {
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [activeTab, setActiveTab] = useState<'join' | 'activities' | 'members' | 'applications'>('join');
@@ -64,7 +116,8 @@ export default function Community() {
     description: '',
     date: '',
     attendees: 30,
-    imageType: 'books' as 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee'
+    imageType: 'books' as 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee',
+    images: [] as string[]
   });
   const [isAdminPostSuccess, setIsAdminPostSuccess] = useState(false);
 
@@ -102,12 +155,14 @@ export default function Community() {
     if (success) {
       const updated = await dbHelper.getMembers();
       setMembers(updated);
-      alert(`Đã phê duyệt hồ sơ của ${member.fullName}!`);
       
-      // Open mailto link
       const subject = encodeURIComponent("[JOB SERVICE] Thông báo phê duyệt hồ sơ gia nhập Cộng đồng Săn Tài Năng");
       const body = encodeURIComponent(`Chào ${member.fullName},\n\nHồ sơ gia nhập Cộng đồng Săn Tài Năng của bạn đã được phê duyệt thành công.\nDưới đây là thông tin đăng nhập của bạn:\nEmail: ${member.email}\nMật khẩu ban đầu: Matkhau123\n\nTrân trọng,\nBan Quản Trị JOB SERVICE`);
-      window.open(`mailto:${member.email}?subject=${subject}&body=${body}`);
+      
+      // Trigger native email client without opening blank tab
+      window.location.href = `mailto:${member.email}?subject=${subject}&body=${body}`;
+      
+      alert(`Đã phê duyệt hồ sơ của ${member.fullName}! Mật khẩu đăng nhập ban đầu: Matkhau123. Hệ thống đã mở ứng dụng gửi thư.`);
     }
   };
 
@@ -286,7 +341,8 @@ export default function Community() {
       description: newActivity.description,
       date: newActivity.date || new Date().toLocaleDateString('vi-VN'),
       attendees: Number(newActivity.attendees) || 0,
-      imageType: newActivity.imageType
+      imageType: newActivity.imageType,
+      images: newActivity.images
     };
 
     const added = await dbHelper.addActivity(payload);
@@ -298,7 +354,8 @@ export default function Community() {
       description: '',
       date: '',
       attendees: 30,
-      imageType: 'books'
+      imageType: 'books',
+      images: []
     });
 
     setTimeout(() => {
@@ -756,19 +813,53 @@ export default function Community() {
                       />
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <label className="text-xs font-bold text-gray-700">Biểu tượng bài viết (Icon)</label>
-                      <select
-                        value={newActivity.imageType}
-                        onChange={(e) => setNewActivity({ ...newActivity, imageType: e.target.value as 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee' })}
-                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                      >
-                        <option value="books">📚 Sách (Workshop)</option>
-                        <option value="handshake">🤝 Bắt tay (Networking)</option>
-                        <option value="briefcase">💼 Cặp táp (Seminar)</option>
-                        <option value="target">🎯 Tiêu điểm (Special)</option>
-                        <option value="party">🎉 Pháo hoa (Sự kiện)</option>
-                        <option value="coffee">☕ Cà phê (Coffee Talk)</option>
-                      </select>
+                      <label className="text-xs font-bold text-gray-700">Hình ảnh bài viết (Tối đa 3 hình)</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          if (newActivity.images.length + files.length > 3) {
+                            alert('Chỉ được chọn tối đa 3 hình ảnh!');
+                            return;
+                          }
+                          
+                          files.forEach(file => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              if (typeof reader.result === 'string') {
+                                setNewActivity(prev => ({
+                                  ...prev,
+                                  images: [...prev.images, reader.result as string]
+                                }));
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                        }}
+                        disabled={newActivity.images.length >= 3}
+                        className="w-full text-xs text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-[#D4AF37]/10 file:text-[#B8860B] hover:file:bg-[#D4AF37]/20 transition-all cursor-pointer bg-white border border-gray-300 py-1.5 px-2 rounded-xl focus:border-[#D4AF37] focus:outline-none"
+                      />
+                      {newActivity.images.length > 0 && (
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {newActivity.images.map((img, idx) => (
+                            <div key={idx} className="relative w-12 h-12 rounded-lg overflow-hidden border border-[#D4AF37]/20 bg-gray-50 shadow-sm">
+                              <img src={img} className="w-full h-full object-cover" alt="Preview" />
+                              <button
+                                type="button"
+                                onClick={() => setNewActivity(prev => ({
+                                  ...prev,
+                                  images: prev.images.filter((_, i) => i !== idx)
+                                }))}
+                                className="absolute top-0 right-0 bg-red-600 text-white p-0.5 rounded-bl hover:bg-red-700 transition-colors"
+                              >
+                                <X size={8} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -832,9 +923,13 @@ export default function Community() {
                     className="p-6 rounded-3xl bg-[#FDFBF7] border border-[#D4AF37]/15 hover:border-[#D4AF37]/35 transition-all shadow-sm flex flex-col justify-between"
                   >
                     <div>
-                      {/* Emoji Icon box */}
-                      <div className="w-full h-32 rounded-2xl bg-white border border-[#D4AF37]/10 flex items-center justify-center text-4xl shadow-inner mb-5">
-                        {emojiMap[act.imageType || 'books']}
+                      {/* Image or Emoji box */}
+                      <div className="w-full h-32 rounded-2xl bg-white border border-[#D4AF37]/10 flex items-center justify-center text-4xl shadow-inner mb-5 overflow-hidden">
+                        {act.images && act.images.length > 0 ? (
+                          <ActivityImagesCarousel images={act.images} />
+                        ) : (
+                          emojiMap[act.imageType || 'books']
+                        )}
                       </div>
 
                       {/* Tag */}

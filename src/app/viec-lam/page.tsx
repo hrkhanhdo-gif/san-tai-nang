@@ -177,7 +177,7 @@ export default function Jobs() {
       fullName: applyForm.fullName,
       email: applyForm.email,
       phone: applyForm.phone,
-      linkedin: applyForm.linkedin,
+      linkedin: '', // Removed from UI
       cvLink: applyForm.cvLink,
       isReferral: applyType === 'refer',
       ...(applyType === 'refer' ? {
@@ -191,6 +191,23 @@ export default function Jobs() {
 
     setApplications((prev) => [newApp, ...prev]);
     setIsApplySuccess(true);
+
+    // Trigger email client sending application to job poster (posted_by)
+    const posterEmail = selectedJob.posted_by || 'ttg.thuanhn@gmail.com';
+    const emailSubject = encodeURIComponent(
+      applyType === 'refer'
+        ? `[JOB SERVICE] Đối tác giới thiệu ứng viên - Vị trí: ${selectedJob.title} - ${selectedJob.company}`
+        : `[JOB SERVICE] Ứng viên ứng tuyển - Vị trí: ${selectedJob.title} - ${selectedJob.company}`
+    );
+    
+    const emailBody = encodeURIComponent(
+      applyType === 'refer'
+        ? `Chào bạn,\n\nĐối tác sau đây đã giới thiệu ứng viên cho công việc "${selectedJob.title}" của bạn trên Cộng đồng Săn Tài Năng:\n\nThông tin người giới thiệu:\n- Họ tên: ${referrerForm.referrerName}\n- Email: ${referrerForm.referrerEmail}\n- SĐT: ${referrerForm.referrerPhone}\n\nThông tin ứng viên được giới thiệu:\n- Họ tên: ${applyForm.fullName}\n- Email: ${applyForm.email}\n- SĐT: ${applyForm.phone}\n\n(Lưu ý: CV của ứng viên đã được lưu trữ trên hệ thống Săn Tài Năng. Vui lòng kiểm tra trong trang quản trị).\n\nTrân trọng,\nJOB SERVICE`
+        : `Chào bạn,\n\nỨng viên sau đây đã ứng tuyển vào công việc "${selectedJob.title}" của bạn trên Cộng đồng Săn Tài Năng:\n\nThông tin ứng viên:\n- Họ tên: ${applyForm.fullName}\n- Email: ${applyForm.email}\n- SĐT: ${applyForm.phone}\n\n(Lưu ý: CV của ứng viên đã được lưu trữ trên hệ thống Săn Tài Năng. Vui lòng kiểm tra trong trang quản trị).\n\nTrân trọng,\nJOB SERVICE`
+    );
+
+    window.location.href = `mailto:${posterEmail}?subject=${emailSubject}&body=${emailBody}`;
+
     setApplyForm({
       fullName: '',
       email: '',
@@ -989,29 +1006,33 @@ export default function Jobs() {
                     </div>
                   </div>
 
-                  {/* LinkedIn Profile */}
+                  {/* Upload CV field */}
                   <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Link LinkedIn ứng viên</label>
+                    <label className="text-xs font-bold text-gray-700">Tải lên tệp CV ứng viên (PDF, Word) *</label>
                     <input
-                      type="url"
-                      placeholder="https://linkedin.com/in/username"
-                      value={applyForm.linkedin}
-                      onChange={(e) => setApplyForm({ ...applyForm, linkedin: e.target.value })}
-                      className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold bg-white"
-                    />
-                  </div>
-
-                  {/* CV Link */}
-                  <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Đường dẫn tệp CV ứng viên (Drive, PDF...) *</label>
-                    <input
-                      type="url"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
                       required
-                      placeholder="https://drive.google.com/..."
-                      value={applyForm.cvLink}
-                      onChange={(e) => setApplyForm({ ...applyForm, cvLink: e.target.value })}
-                      className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-sm font-semibold bg-white"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            if (typeof reader.result === 'string') {
+                              setApplyForm(prev => ({
+                                ...prev,
+                                cvLink: reader.result as string
+                              }));
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white cursor-pointer"
                     />
+                    {applyForm.cvLink && applyForm.cvLink.startsWith('data:') && (
+                      <span className="text-[10px] text-green-600 font-bold block mt-1">✓ Đã tải tệp CV thành công</span>
+                    )}
                   </div>
 
                   <button

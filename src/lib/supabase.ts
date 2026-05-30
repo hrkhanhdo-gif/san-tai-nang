@@ -96,7 +96,8 @@ export interface CommunityActivity {
   attendees: number;
   likes: string[]; // List of user emails who liked
   comments: ActivityComment[];
-  imageType: 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee';
+  imageType?: 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee';
+  images?: string[]; // Array of up to 3 image base64 strings
   created_at: string;
 }
 
