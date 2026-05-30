@@ -15,7 +15,8 @@ import {
   Trash2,
   Check,
   Eye,
-  FileText
+  FileText,
+  Heart
 } from 'lucide-react';
 import { dbHelper, Job, UserSession, JobApplication } from '@/lib/supabase';
 import { MotionDiv } from '@/components/motion';
@@ -34,6 +35,8 @@ export default function Jobs() {
 
   // Modals & Panels State
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedJobDetail, setSelectedJobDetail] = useState<Job | null>(null);
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [isApplySuccess, setIsApplySuccess] = useState(false);
   const [applyForm, setApplyForm] = useState({
     fullName: '',
@@ -42,6 +45,12 @@ export default function Jobs() {
     linkedin: '',
     cvLink: ''
   });
+
+  const toggleSaveJob = (jobId: string) => {
+    setSavedJobIds(prev => 
+      prev.includes(jobId) ? prev.filter(id => id !== jobId) : [...prev, jobId]
+    );
+  };
 
   // Jobs Posting Form State
   const [isPostingMode, setIsPostingMode] = useState(false);
@@ -625,9 +634,7 @@ export default function Jobs() {
                         Ứng tuyển ngay
                       </button>
                       <button
-                        onClick={() => {
-                          alert(job.description || 'Chức năng chi tiết đang được xây dựng...');
-                        }}
+                        onClick={() => setSelectedJobDetail(job)}
                         className="px-4 py-2.5 rounded-xl border border-gray-300 hover:border-gray-500 text-gray-700 text-xs font-bold uppercase tracking-wider transition-colors"
                       >
                         Chi tiết
@@ -1017,6 +1024,291 @@ export default function Jobs() {
               >
                 Đóng lại
               </button>
+            </div>
+          </MotionDiv>
+        </div>
+      )}
+
+      {/* Job Detail Modal (2-Column Premium Layout) */}
+      {selectedJobDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <MotionDiv
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-6xl bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 md:p-8 relative max-h-[90vh] overflow-y-auto"
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedJobDetail(null)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors z-10"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Grid Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4 text-left">
+              
+              {/* Left Column (Main JD & Title) */}
+              <div className="lg:col-span-8 space-y-6">
+                
+                {/* Job Title & Header Card */}
+                <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100 space-y-5">
+                  <div className="flex items-start space-x-3">
+                    <h2 className="text-xl md:text-2xl font-black text-gray-900 leading-snug">
+                      {selectedJobDetail.title}
+                    </h2>
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white text-xs mt-1.5 flex-shrink-0" title="Đã xác thực">
+                      ✓
+                    </span>
+                  </div>
+
+                  {/* 3 Quick Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Salary */}
+                    <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+                      <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+                        <DollarSign size={20} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Mức lương</span>
+                        <span className="text-xs font-black text-gray-900">{selectedJobDetail.salary}</span>
+                      </div>
+                    </div>
+
+                    {/* Location */}
+                    <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                        <MapPin size={20} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Địa điểm</span>
+                        <span className="text-xs font-black text-gray-900">{selectedJobDetail.location}</span>
+                      </div>
+                    </div>
+
+                    {/* Experience */}
+                    <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+                      <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
+                        <Briefcase size={20} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Kinh nghiệm</span>
+                        <span className="text-xs font-black text-gray-900">
+                          {selectedJobDetail.level === 'Senior' ? 'Trên 5 năm' : 
+                           selectedJobDetail.level === 'Manager' ? 'Trên 8 năm' : 
+                           selectedJobDetail.level === 'Director' ? 'Trên 10 năm' : '1 - 3 năm'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Market salary suggestion */}
+                  <div>
+                    <button 
+                      onClick={() => alert(`Mức lương thị trường trung bình cho vị trí ${selectedJobDetail.title} tại ${selectedJobDetail.location} dao động từ 22,000,000 đến 48,000,000 VND/tháng.`)}
+                      className="text-xs text-green-600 hover:text-green-700 font-bold flex items-center space-x-1"
+                    >
+                      <span>Xem mức lương thị trường cho vị trí này &gt;&gt;</span>
+                    </button>
+                  </div>
+
+                  {/* Application Counter & Deadline Alert Banner */}
+                  <div className="p-3.5 rounded-xl bg-[#FFF9E6] border border-[#FFE8A3] flex items-center justify-between text-xs text-yellow-800 font-bold flex-wrap gap-2">
+                    <span className="flex items-center space-x-1.5">
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                      </span>
+                      <span>Xem số người đã ứng tuyển: <strong>12 người</strong></span>
+                      <span className="bg-red-500 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded ml-1">New</span>
+                    </span>
+                    <span>Hạn nộp hồ sơ: 28/06/2026 (Còn 28 ngày)</span>
+                  </div>
+
+                  {/* Action buttons (Ứng tuyển ngay & Lưu tin) */}
+                  <div className="flex space-x-3 pt-2">
+                    <button
+                      onClick={() => {
+                        setSelectedJobDetail(null);
+                        setSelectedJob(selectedJobDetail);
+                      }}
+                      className="flex-grow py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-black uppercase tracking-wider transition-colors shadow flex items-center justify-center space-x-2"
+                    >
+                      <Send size={14} />
+                      <span>Ứng tuyển ngay</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        toggleSaveJob(selectedJobDetail.id);
+                        alert(savedJobIds.includes(selectedJobDetail.id) ? "Đã bỏ lưu tin tuyển dụng!" : "Lưu tin tuyển dụng thành công!");
+                      }}
+                      className={`px-6 py-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all flex items-center space-x-2 ${
+                        savedJobIds.includes(selectedJobDetail.id)
+                          ? 'bg-red-50 border-red-200 text-red-600'
+                          : 'border-gray-300 hover:border-gray-400 text-gray-700 bg-white'
+                      }`}
+                    >
+                      <Heart size={14} className={savedJobIds.includes(selectedJobDetail.id) ? "fill-red-600" : ""} />
+                      <span>{savedJobIds.includes(selectedJobDetail.id) ? 'Đã lưu tin' : 'Lưu tin'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* JD Content Container */}
+                <div className="p-6 border border-gray-100 rounded-2xl space-y-6">
+                  <h3 className="text-lg font-black text-gray-900 border-b border-gray-100 pb-3">
+                    Chi tiết tin tuyển dụng
+                  </h3>
+
+                  {/* Tags */}
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                      <span className="text-gray-400 font-bold">Yêu cầu:</span>
+                      <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">
+                        {selectedJobDetail.level === 'Senior' ? 'Trên 5 năm kinh nghiệm chuyên môn' : 
+                         selectedJobDetail.level === 'Manager' ? 'Trên 8 năm kinh nghiệm chuyên môn' : 
+                         selectedJobDetail.level === 'Director' ? 'Trên 10 năm kinh nghiệm chuyên môn' : '1 - 3 năm kinh nghiệm chuyên môn'}
+                      </span>
+                      <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">Đại học trở lên</span>
+                      <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">Nam/Nữ</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 text-xs font-semibold items-center">
+                      <span className="text-gray-400 font-bold">Chuyên môn:</span>
+                      {selectedJobDetail.skills.map((skill, index) => (
+                        <span key={index} className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Job Description Text details */}
+                  <div className="space-y-4 text-xs font-semibold text-gray-700 leading-relaxed">
+                    <h4 className="text-sm font-black text-gray-900">Mô tả công việc</h4>
+                    {selectedJobDetail.description ? (
+                      <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium">
+                        {selectedJobDetail.description}
+                      </div>
+                    ) : (
+                      <ul className="list-disc pl-5 space-y-2 text-gray-600 font-medium">
+                        <li>Xây dựng và triển khai thực hiện các chính sách, quy trình, quy định, chương trình nhân sự nhằm hấp dẫn, duy trì và không ngừng phát huy năng lực của nguồn nhân lực, đáp ứng các chiến lược và mục tiêu chung của công ty.</li>
+                        <li>Lập kế hoạch, triển khai và quản lý các chức năng của phòng HC-NS: Tuyển dụng, Bố trí nhân sự, Tiền lương, Chế độ phúc lợi, Quan hệ lao động và Đào tạo phát triển.</li>
+                        <li>Trực tiếp tìm kiếm, tuyển chọn nhân sự trung và cao cấp theo chỉ tiêu.</li>
+                        <li>Tư vấn và hỗ trợ Ban Giám Đốc giải quyết các sự vụ hành chính nhân sự phát sinh một cách nhanh chóng, đúng luật lao động.</li>
+                      </ul>
+                    )}
+
+                    <h4 className="text-sm font-black text-gray-900 pt-4">YÊU CẦU CÔNG VIỆC CHÌA KHÓA</h4>
+                    <ul className="list-disc pl-5 space-y-2 text-gray-600 font-medium">
+                      <li>Tốt nghiệp Đại học trở lên chuyên ngành Quản trị nhân lực, Luật, Kinh tế hoặc liên quan.</li>
+                      <li>Kinh nghiệm tối thiểu 3-5 năm ở vị trí tương đương, ưu tiên ứng viên có kinh nghiệm trong ngành Headhunt hoặc quy mô công ty trên 200 người.</li>
+                      <li>Hiểu biết sâu sắc về Luật lao động Việt Nam, BHXH, thuế TNCN.</li>
+                      <li>Kỹ năng giao tiếp, đàm phán thuyết phục và giải quyết vấn đề xuất sắc.</li>
+                      <li>Có tư duy nhạy bén về thị trường lao động và khả năng thu hút nhân tài xuất sắc.</li>
+                    </ul>
+
+                    <h4 className="text-sm font-black text-gray-900 pt-4">QUYỀN LỢI ĐƯỢC HƯỞNG</h4>
+                    <ul className="list-disc pl-5 space-y-2 text-gray-600 font-medium">
+                      <li>Mức thu nhập cạnh tranh dựa trên năng lực chuyên môn thực tế.</li>
+                      <li>Lương tháng 13 + thưởng hiệu quả công việc cá nhân và doanh số công ty.</li>
+                      <li>Đóng đầy đủ BHXH, BHYT, BHTN theo quy định Nhà nước hiện hành.</li>
+                      <li>Tham gia các chương trình teambuilding, nghỉ mát hàng năm cùng cộng đồng đối tác.</li>
+                      <li>Môi trường làm việc năng động, sáng tạo và nhiều cơ hội thăng tiến lên cấp quản lý cấp cao.</li>
+                    </ul>
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* Right Column (Company & Common Info) */}
+              <div className="lg:col-span-4 space-y-6">
+                
+                {/* Company Box */}
+                <div className="p-6 rounded-2xl border border-gray-100 space-y-4 bg-white shadow-sm">
+                  <div className="flex items-center space-x-3.5 pb-4 border-b border-gray-100">
+                    <div className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center bg-gray-50 text-[#B8860B] font-extrabold text-sm flex-shrink-0 shadow-inner">
+                      {selectedJobDetail.company.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex flex-col">
+                      <h4 className="text-xs font-black text-gray-900 leading-snug">
+                        {selectedJobDetail.company}
+                      </h4>
+                      <span className="text-[10px] text-gray-400 font-bold block mt-1">Đã xác minh thông tin</span>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-3 text-xs font-semibold text-gray-600">
+                    <li className="flex justify-between">
+                      <span className="text-gray-400 font-bold">Quy mô:</span>
+                      <span className="text-gray-900 font-black">100 - 500 nhân viên</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-gray-400 font-bold">Lĩnh vực:</span>
+                      <span className="text-gray-900 font-black">Tuyển dụng / Nhân sự</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-gray-400 font-bold">Địa điểm:</span>
+                      <span className="text-gray-900 font-black">{selectedJobDetail.location}</span>
+                    </li>
+                  </ul>
+
+                  <button
+                    onClick={() => alert(`Đang tải trang hồ sơ công ty ${selectedJobDetail.company}...`)}
+                    className="w-full py-2.5 rounded-xl border border-green-600 hover:bg-green-50 text-green-600 text-[11px] font-black transition-all text-center block uppercase tracking-wider"
+                  >
+                    Xem trang công ty
+                  </button>
+                </div>
+
+                {/* General Info Box */}
+                <div className="p-6 rounded-2xl border border-gray-100 space-y-4 bg-white shadow-sm">
+                  <h4 className="text-sm font-black text-gray-900 border-b border-gray-100 pb-3">
+                    Thông tin chung
+                  </h4>
+
+                  <ul className="space-y-3.5 text-xs font-semibold text-gray-600">
+                    <li className="flex justify-between items-center">
+                      <span className="text-gray-400 font-bold">Cấp bậc:</span>
+                      <span className="text-gray-900 font-black">{selectedJobDetail.level}</span>
+                    </li>
+                    <li className="flex justify-between items-center">
+                      <span className="text-gray-400 font-bold">Học vấn:</span>
+                      <span className="text-gray-900 font-black">Đại học trở lên</span>
+                    </li>
+                    <li className="flex justify-between items-center">
+                      <span className="text-gray-400 font-bold">Số lượng tuyển:</span>
+                      <span className="text-gray-900 font-black">1 người</span>
+                    </li>
+                    <li className="flex justify-between items-center">
+                      <span className="text-gray-400 font-bold">Loại hình làm việc:</span>
+                      <span className="text-gray-900 font-black">{selectedJobDetail.type}</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Related Categories */}
+                <div className="p-6 rounded-2xl border border-gray-100 space-y-4 bg-white shadow-sm">
+                  <h4 className="text-sm font-black text-gray-900 border-b border-gray-100 pb-3">
+                    Danh mục Nghề liên quan
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                      Nhân sự / Hành chính
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                      Tuyển dụng / Headhunt
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                      HRBP Partner
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           </MotionDiv>
         </div>

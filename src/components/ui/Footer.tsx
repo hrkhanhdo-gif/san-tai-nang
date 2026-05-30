@@ -121,14 +121,21 @@ export default function Footer() {
             </p>
             <div className="flex items-center space-x-2 pt-2">
               <a
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/in/hangnghiathuan/"
                 target="_blank"
                 rel="noreferrer"
                 className="w-7 h-7 rounded-full border border-gray-200 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 text-gray-600 hover:text-[#D4AF37] flex items-center justify-center transition-all"
               >
                 <LinkedinIcon size={14} />
               </a>
-              <span className="text-xs text-gray-400 font-bold">Connect on LinkedIn</span>
+              <a
+                href="https://www.linkedin.com/in/hangnghiathuan/"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-gray-400 font-bold hover:text-[#D4AF37] hover:underline transition-colors"
+              >
+                Connect on LinkedIn
+              </a>
             </div>
           </div>
         </div>

@@ -29,6 +29,18 @@ export default function Contact() {
       message: form.message
     });
 
+    // Construct the mailto link to open user's local email app
+    const subject = encodeURIComponent(`[Săn Tài Năng] Liên hệ từ ${form.fullName}`);
+    const body = encodeURIComponent(
+      `Họ và tên: ${form.fullName}\n` +
+      `Địa chỉ Email: ${form.email}\n` +
+      `Số điện thoại: ${form.phone}\n\n` +
+      `Nội dung tin nhắn:\n${form.message}`
+    );
+    
+    // Redirect to mailto link
+    window.location.href = `mailto:ttg.thuanhn@gmail.com?subject=${subject}&body=${body}`;
+
     setIsSuccess(true);
     setForm({
       fullName: '',

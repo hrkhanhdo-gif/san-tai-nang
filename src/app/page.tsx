@@ -110,7 +110,7 @@ export default function Home() {
             className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#B8860B] font-bold text-xs uppercase tracking-wider mb-8"
           >
             <Award size={14} className="text-[#D4AF37]" />
-            <span>Cộng đồng Recruiter hàng đầu Việt Nam</span>
+            <span>Cộng đồng chia sẻ, kết nối và phát triển Tuyển dụng</span>
           </MotionDiv>
 
           {/* Title */}

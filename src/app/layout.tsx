@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description: 'Cộng đồng dành riêng cho Recruiter, Headhunter, Talent Acquisition, HRBP, HR Manager và các chuyên gia nhân sự hàng đầu tại Việt Nam.',
   keywords: ['săn tài năng', 'tuyển dụng', 'nhân tài', 'headhunter việt nam', 'hr community', 'job service connect', 'hằng nghĩa thuận', 'việc làm cấp cao'],
   openGraph: {
-    title: 'SĂN TÀI NĂNG - Cộng đồng Recruiter hàng đầu Việt Nam',
+    title: 'SĂN TÀI NĂNG - Cộng đồng chia sẻ, kết nối và phát triển Tuyển dụng',
     description: 'Nền tảng kết nối nhân sự, hợp tác tuyển dụng, chia sẻ ứng viên và chia sẻ cơ hội việc làm cao cấp.',
     type: 'website',
     locale: 'vi_VN',

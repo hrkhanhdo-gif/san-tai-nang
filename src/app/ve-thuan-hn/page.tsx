@@ -100,45 +100,46 @@ export default function About() {
       {/* Profile Intro Section */}
       <section className="pt-16 pb-20 bg-gradient-to-b from-[#FDFBF7] to-white border-b border-[#D4AF37]/5">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Profile Image Box (Left) - Kept blank but styled luxuriously */}
+          {/* Profile Image Box (Left) - Showing portrait image beautifully */}
           <MotionDiv 
             initial={{ opacity: 0, x: -35 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
             className="lg:col-span-5 flex justify-center"
           >
-            <div className="relative w-full max-w-[400px] aspect-[4/5] rounded-3xl border-2 border-[#D4AF37]/30 bg-[#FDFBF7] flex flex-col items-center justify-center p-8 shadow-xl overflow-hidden group">
-              {/* Abstract decorative elements */}
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-[#FFC107]/20 to-transparent rounded-bl-full" />
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#D4AF37]/10 to-transparent rounded-tr-full" />
+            <div className="relative w-full max-w-[400px] aspect-[4/5] rounded-3xl border-2 border-[#D4AF37]/30 bg-[#FDFBF7] shadow-xl overflow-hidden group">
+              {/* Profile Image */}
+              <img 
+                src="/thuan-hn.jpg" 
+                alt="CEO Hằng Nghĩa Thuận"
+                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              />
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
               
-              {/* Decorative gold lines */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 rounded-2xl border border-dashed border-[#D4AF37]/20 pointer-events-none" />
-
-              {/* Monogram placeholder */}
-              <div className="w-28 h-28 rounded-full gradient-gold-bg flex items-center justify-center text-white font-extrabold text-3xl shadow-lg mb-6 group-hover:scale-105 transition-transform duration-300">
-                HNT
-              </div>
-              
-              <h3 className="text-xl font-black text-gray-900 tracking-wide text-center">HẰNG NGHĨA THUẬN</h3>
-              <p className="text-xs text-[#B8860B] font-bold tracking-widest uppercase text-center mt-2">
-                Talent Acquisition Partner
-              </p>
-              <div className="w-10 h-0.5 bg-[#D4AF37] my-4" />
-              
-              {/* Fast Contact Card */}
-              <div className="w-full bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-[#D4AF37]/10 space-y-2 text-xs font-semibold text-gray-700">
-                <div className="flex items-center space-x-2.5">
-                  <MapPin size={14} className="text-[#D4AF37]" />
-                  <span>KDC Lê Thành, An Lạc, TP.HCM</span>
+              {/* Text on top of image */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white space-y-4">
+                <div>
+                  <h3 className="text-xl font-black tracking-wide">HẰNG NGHĨA THUẬN</h3>
+                  <p className="text-xs text-[#D4AF37] font-bold tracking-widest uppercase mt-1">
+                    CEO - JOB SERVICE CONNECT
+                  </p>
                 </div>
-                <div className="flex items-center space-x-2.5">
-                  <Phone size={14} className="text-[#D4AF37]" />
-                  <a href="tel:+84986162568" className="hover:text-[#D4AF37] transition-colors">+84 98 61 62 568</a>
-                </div>
-                <div className="flex items-center space-x-2.5">
-                  <Mail size={14} className="text-[#D4AF37]" />
-                  <a href="mailto:ttg.thuanhn@gmail.com" className="hover:text-[#D4AF37] transition-colors">ttg.thuanhn@gmail.com</a>
+                
+                {/* Fast Contact Card */}
+                <div className="w-full bg-black/40 backdrop-blur-md rounded-xl p-3 border border-white/10 space-y-1.5 text-[11px] font-semibold text-white/90">
+                  <div className="flex items-center space-x-2">
+                    <MapPin size={12} className="text-[#D4AF37]" />
+                    <span>KDC Lê Thành, An Lạc, TP.HCM</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Phone size={12} className="text-[#D4AF37]" />
+                    <a href="tel:+84986162568" className="hover:text-[#D4AF37] transition-colors">+84 98 61 62 568</a>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Mail size={12} className="text-[#D4AF37]" />
+                    <a href="mailto:ttg.thuanhn@gmail.com" className="hover:text-[#D4AF37] transition-colors">ttg.thuanhn@gmail.com</a>
+                  </div>
                 </div>
               </div>
             </div>

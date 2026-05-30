@@ -15,8 +15,7 @@ import {
   Heart,
   MessageSquare,
   Calendar,
-  PlusCircle,
-  X
+  PlusCircle
 } from 'lucide-react';
 
 interface IconProps extends React.SVGProps<SVGSVGElement> {
@@ -52,8 +51,6 @@ export default function Community() {
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
-  // Admin New Activity Form
-  const [showAdminForm, setShowAdminForm] = useState(false);
   const [newActivity, setNewActivity] = useState({
     title: '',
     category: 'Workshop' as 'Workshop' | 'Networking' | 'Seminar' | 'Sự kiện',
@@ -267,7 +264,6 @@ export default function Community() {
 
     setTimeout(() => {
       setIsAdminPostSuccess(false);
-      setShowAdminForm(false);
     }, 2000);
   };
 
@@ -554,123 +550,103 @@ export default function Community() {
         <section className="py-12 bg-white max-w-7xl mx-auto px-6">
           {/* Admin Create Activity Trigger & Panel */}
           {currentUser?.role === 'admin' && (
-            <div className="mb-8">
-              <button
-                onClick={() => setShowAdminForm(!showAdminForm)}
-                className="flex items-center space-x-2 px-4 py-2.5 border border-[#D4AF37] rounded-xl text-[#B8860B] font-bold text-xs uppercase tracking-wider hover:bg-[#D4AF37]/5 transition-colors"
-              >
-                <PlusCircle size={15} />
-                <span>Đăng hoạt động mới (Admin)</span>
-              </button>
+            <div className="mb-10 p-6 rounded-3xl bg-[#FDFBF7] border border-[#D4AF37]/20 shadow-md">
+              <h3 className="text-sm font-black text-gray-900 flex items-center space-x-2 border-b border-[#D4AF37]/15 pb-3 mb-5 uppercase tracking-wider">
+                <PlusCircle className="text-[#D4AF37]" size={18} />
+                <span>Tạo bài viết / Hoạt động mới (Dành cho Ban Quản Trị)</span>
+              </h3>
 
-              {showAdminForm && (
-                <MotionDiv
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-4 p-6 bg-[#FDFBF7] border border-[#D4AF37]/25 rounded-2xl shadow-sm space-y-4"
-                >
-                  <div className="flex items-center justify-between border-b border-[#D4AF37]/15 pb-2">
-                    <span className="text-xs font-black uppercase text-gray-900">
-                      Tạo hoạt động cộng đồng mới
-                    </span>
-                    <button onClick={() => setShowAdminForm(false)} className="text-gray-400 hover:text-gray-600">
-                      <X size={16} />
-                    </button>
+              {isAdminPostSuccess ? (
+                <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-center flex items-center justify-center space-x-2 font-bold text-sm">
+                  <CheckCircle size={16} />
+                  <span>Bài viết đã được đăng tải thành công lên cộng đồng!</span>
+                </div>
+              ) : (
+                <form onSubmit={handleAdminPostActivity} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-xs font-bold text-gray-700">Tên hoạt động / Tiêu đề bài đăng *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ví dụ: Workshop: Định hình năng lực Recruiter thế hệ mới"
+                        value={newActivity.title}
+                        onChange={(e) => setNewActivity({ ...newActivity, title: e.target.value })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-xs font-bold text-gray-700">Phân loại chuyên mục *</label>
+                      <select
+                        value={newActivity.category}
+                        onChange={(e) => setNewActivity({ ...newActivity, category: e.target.value as 'Workshop' | 'Networking' | 'Seminar' | 'Sự kiện' })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      >
+                        <option value="Workshop">Workshop</option>
+                        <option value="Networking">Networking</option>
+                        <option value="Seminar">Seminar</option>
+                        <option value="Sự kiện">Sự kiện</option>
+                      </select>
+                    </div>
                   </div>
 
-                  {isAdminPostSuccess ? (
-                    <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-center flex items-center justify-center space-x-2 font-bold text-sm">
-                      <CheckCircle size={16} />
-                      <span>Hoạt động đã được xuất bản lên cộng đồng!</span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-xs font-bold text-gray-700">Ngày diễn ra / Đăng bài</label>
+                      <input
+                        type="text"
+                        placeholder="Để trống lấy ngày hôm nay"
+                        value={newActivity.date}
+                        onChange={(e) => setNewActivity({ ...newActivity, date: e.target.value })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      />
                     </div>
-                  ) : (
-                    <form onSubmit={handleAdminPostActivity} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col space-y-1">
-                          <label className="text-xs font-bold text-gray-700">Tên hoạt động *</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="Ví dụ: Workshop: AI Recruitment"
-                            value={newActivity.title}
-                            onChange={(e) => setNewActivity({ ...newActivity, title: e.target.value })}
-                            className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                          />
-                        </div>
-                        <div className="flex flex-col space-y-1">
-                          <label className="text-xs font-bold text-gray-700">Phân loại *</label>
-                          <select
-                            value={newActivity.category}
-                            onChange={(e) => setNewActivity({ ...newActivity, category: e.target.value as 'Workshop' | 'Networking' | 'Seminar' | 'Sự kiện' })}
-                            className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                          >
-                            <option value="Workshop">Workshop</option>
-                            <option value="Networking">Networking</option>
-                            <option value="Seminar">Seminar</option>
-                            <option value="Sự kiện">Sự kiện</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="flex flex-col space-y-1">
-                          <label className="text-xs font-bold text-gray-700">Ngày diễn ra (ví dụ: 15/04/2024)</label>
-                          <input
-                            type="text"
-                            placeholder="Để trống lấy ngày hôm nay"
-                            value={newActivity.date}
-                            onChange={(e) => setNewActivity({ ...newActivity, date: e.target.value })}
-                            className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                          />
-                        </div>
-                        <div className="flex flex-col space-y-1">
-                          <label className="text-xs font-bold text-gray-700">Số người tham gia dự kiến</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={newActivity.attendees}
-                            onChange={(e) => setNewActivity({ ...newActivity, attendees: Number(e.target.value) })}
-                            className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                          />
-                        </div>
-                        <div className="flex flex-col space-y-1">
-                          <label className="text-xs font-bold text-gray-700">Biểu tượng (Icon)</label>
-                          <select
-                            value={newActivity.imageType}
-                            onChange={(e) => setNewActivity({ ...newActivity, imageType: e.target.value as 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee' })}
-                            className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                          >
-                            <option value="books">📚 Sách (Workshop)</option>
-                            <option value="handshake">🤝 Bắt tay (Networking)</option>
-                            <option value="briefcase">💼 Cặp táp (Seminar)</option>
-                            <option value="target">🎯 Tiêu điểm (Special)</option>
-                            <option value="party">🎉 Pháo hoa (Sự kiện)</option>
-                            <option value="coffee">☕ Cà phê (Coffee Talk)</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col space-y-1">
-                        <label className="text-xs font-bold text-gray-700">Mô tả hoạt động *</label>
-                        <textarea
-                          required
-                          rows={2}
-                          placeholder="Nhập mô tả chi tiết chương trình..."
-                          value={newActivity.description}
-                          onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
-                          className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white resize-none"
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="w-full py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-sm"
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-xs font-bold text-gray-700">Số lượng người tham gia dự kiến</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={newActivity.attendees}
+                        onChange={(e) => setNewActivity({ ...newActivity, attendees: Number(e.target.value) })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-xs font-bold text-gray-700">Biểu tượng bài viết (Icon)</label>
+                      <select
+                        value={newActivity.imageType}
+                        onChange={(e) => setNewActivity({ ...newActivity, imageType: e.target.value as 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee' })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
                       >
-                        Đăng hoạt động
-                      </button>
-                    </form>
-                  )}
-                </MotionDiv>
+                        <option value="books">📚 Sách (Workshop)</option>
+                        <option value="handshake">🤝 Bắt tay (Networking)</option>
+                        <option value="briefcase">💼 Cặp táp (Seminar)</option>
+                        <option value="target">🎯 Tiêu điểm (Special)</option>
+                        <option value="party">🎉 Pháo hoa (Sự kiện)</option>
+                        <option value="coffee">☕ Cà phê (Coffee Talk)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Nội dung chi tiết bài viết *</label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Nhập nội dung chia sẻ chi tiết cho cộng đồng..."
+                      value={newActivity.description}
+                      onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
+                      className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 rounded-xl text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-md"
+                  >
+                    Đăng tải hoạt động lên cộng đồng
+                  </button>
+                </form>
               )}
             </div>
           )}
