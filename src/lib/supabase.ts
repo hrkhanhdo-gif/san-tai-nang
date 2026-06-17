@@ -102,7 +102,48 @@ export interface CommunityActivity {
   created_at: string;
 }
 
-const DEFAULT_JOBS: Job[] = [];
+const DEFAULT_JOBS: Job[] = [
+  {
+    id: 'job-1',
+    title: 'Trưởng Phòng Đối Tác Nhân Sự (HRBP)',
+    company: 'CÔNG TY TNHH XUẤT NHẬP KHẨU PHÁT TRIỂN ĐÔNG DƯƠNG',
+    salary: 'Thỏa thuận',
+    location: 'TP. Hồ Chí Minh',
+    skills: ['HRBP', 'Headhunt', 'Tuyển dụng', 'Senior'],
+    level: 'Senior',
+    type: 'Full-time',
+    description: `1. Quản lý toàn bộ hoạt động tuyển dụng nhân sự.\n2. Xây dựng kế hoạch và ngân sách nhân sự.\n3. Hỗ trợ các phòng ban về mặt nhân sự và đào tạo.`,
+    requirements: `- Trên 5 năm kinh nghiệm làm HRBP hoặc vị trí tương đương.\n- Tốt nghiệp Đại học chuyên ngành quản trị nhân lực hoặc liên quan.\n- Kỹ năng giao tiếp và giải quyết vấn đề tốt.`,
+    benefits: `- Lương tháng 13 + thưởng KPIs hấp dẫn.\n- Đóng BHXH đầy đủ theo Luật lao động.\n- Môi trường làm việc chuyên nghiệp, cơ hội thăng tiến cao.`,
+    workingTime: 'Thứ 2 - Thứ 6 (8:00 - 17:30)',
+    workingAddress: 'Tòa nhà Bitexco, Quận 1, TP. Hồ Chí Minh',
+    isHeadhunt: true,
+    referralCommission: '20.000.000đ',
+    created_at: '2026-06-18T00:00:00.000Z',
+    posted_by: 'admin@sntn.vn',
+    approved: true
+  },
+  {
+    id: 'job-2',
+    title: 'Chuyên Viên Tuyển Dụng Cấp Cao (Senior Recruiter)',
+    company: 'JOB SERVICE',
+    salary: '15,000,000 - 25,000,000 VND',
+    location: 'TP. Hồ Chí Minh',
+    skills: ['Recruitment', 'Sourcing', 'Interviewing'],
+    level: 'Senior',
+    type: 'Full-time',
+    description: `- Thực hiện tìm kiếm và phỏng vấn ứng viên các vị trí cấp trung và cấp cao.\n- Xây dựng và mở rộng mạng lưới nguồn ứng viên tiềm năng.\n- Chăm sóc khách hàng doanh nghiệp đối tác.`,
+    requirements: `- Có từ 3 năm kinh nghiệm trong lĩnh vực Headhunt hoặc Tuyển dụng nội bộ.\n- Kỹ năng phỏng vấn, đánh giá ứng viên xuất sắc.\n- Chủ động, chịu được áp lực công việc tốt.`,
+    benefits: `- Lương cứng cạnh tranh + Hoa hồng tuyển dụng cực cao.\n- Được đào tạo kỹ năng nâng cao trực tiếp từ CEO Hàng Nghĩa Thuận.\n- Tham gia các hoạt động teambuilding, du lịch hàng năm.`,
+    workingTime: 'Thứ 2 - Thứ 6 (8:30 - 18:00)',
+    workingAddress: 'KDC Lê Thành, An Lạc, Bình Tân, TP. Hồ Chí Minh',
+    isHeadhunt: false,
+    referralCommission: '',
+    created_at: '2026-06-18T00:00:00.000Z',
+    posted_by: 'admin@sntn.vn',
+    approved: true
+  }
+];
 
 const DEFAULT_ACTIVITIES: CommunityActivity[] = [];
 
@@ -158,10 +199,10 @@ export const dbHelper = {
   // --- JOBS API ---
   async getJobs(): Promise<Job[]> {
     if (typeof window !== 'undefined') {
-      if (!localStorage.getItem('sntn_cleared_mock_data_v3')) {
+      if (!localStorage.getItem('sntn_cleared_mock_data_v4')) {
         localStorage.removeItem('sntn_jobs');
         localStorage.removeItem('sntn_activities');
-        localStorage.setItem('sntn_cleared_mock_data_v3', 'true');
+        localStorage.setItem('sntn_cleared_mock_data_v4', 'true');
       }
       const local = localStorage.getItem('sntn_jobs');
       if (local) {

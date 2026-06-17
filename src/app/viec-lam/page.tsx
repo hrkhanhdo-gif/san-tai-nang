@@ -18,7 +18,9 @@ import {
   FileText,
   Heart,
   Users,
-  Award
+  Award,
+  ArrowLeft,
+  Share2
 } from 'lucide-react';
 import { dbHelper, Job, UserSession, JobApplication } from '@/lib/supabase';
 import { MotionDiv } from '@/components/motion';
@@ -39,6 +41,20 @@ export default function Jobs() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [applyType, setApplyType] = useState<'apply' | 'refer'>('apply');
   const [selectedJobDetail, setSelectedJobDetail] = useState<Job | null>(null);
+
+  const handleOpenDetail = (job: Job) => {
+    setSelectedJobDetail(job);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', `?jobId=${job.id}`);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedJobDetail(null);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/viec-lam');
+    }
+  };
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [isApplySuccess, setIsApplySuccess] = useState(false);
   const [applyFallbackMailto, setApplyFallbackMailto] = useState('');
@@ -113,6 +129,16 @@ export default function Jobs() {
       
       const appsData = await dbHelper.getApplications();
       setApplications(appsData);
+
+      // Check jobId from URL search params
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const jobId = params.get('jobId');
+        if (jobId) {
+          const job = jobsData.find(j => j.id === jobId);
+          if (job) setSelectedJobDetail(job);
+        }
+      }
     }
     loadData();
 
@@ -336,7 +362,7 @@ export default function Jobs() {
       referralCommission: newJobForm.isHeadhunt ? newJobForm.referralCommission : ''
     };
 
-    const approveImmediately = currentUser.role === 'admin';
+    const approveImmediately = true; // Automatically approve postings immediately
     const addedJob = await dbHelper.addJob(jobPayload, currentUser.email, approveImmediately);
     setJobs([addedJob, ...jobs]);
     
@@ -455,7 +481,23 @@ export default function Jobs() {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* Banner */}
+      {selectedJobDetail ? (
+        <JobDetailView 
+          job={selectedJobDetail}
+          onClose={handleCloseDetail}
+          onApply={(type) => {
+            setApplyType(type);
+            setSelectedJob(selectedJobDetail);
+          }}
+          savedJobIds={savedJobIds}
+          onSave={(id) => {
+            toggleSaveJob(id);
+            alert(savedJobIds.includes(id) ? "Đã bỏ lưu tin tuyển dụng!" : "Lưu tin tuyển dụng thành công!");
+          }}
+        />
+      ) : (
+        <>
+          {/* Banner */}
       <section className="pt-16 pb-12 bg-gradient-to-b from-[#FDFBF7] to-white border-b border-[#D4AF37]/5 text-center">
         <div className="max-w-4xl mx-auto px-6">
           <span className="text-xs font-bold text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-3 py-1 rounded-full">
@@ -827,7 +869,10 @@ export default function Jobs() {
                     {/* Header */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="pr-12">
-                        <h4 className="text-lg font-black text-gray-900 hover:text-[#D4AF37] transition-colors leading-snug">
+                        <h4 
+                          onClick={() => handleOpenDetail(job)}
+                          className="text-lg font-black text-gray-900 hover:text-[#D4AF37] transition-colors leading-snug cursor-pointer"
+                        >
                           {job.title}
                         </h4>
                         <div className="flex items-center space-x-2 mt-1">
@@ -887,7 +932,7 @@ export default function Jobs() {
                         Ứng tuyển ngay
                       </button>
                       <button
-                        onClick={() => setSelectedJobDetail(job)}
+                        onClick={() => handleOpenDetail(job)}
                         className="px-4 py-2.5 rounded-xl border border-gray-300 hover:border-gray-500 text-gray-700 text-xs font-bold uppercase tracking-wider transition-colors"
                       >
                         Chi tiết
@@ -932,6 +977,8 @@ export default function Jobs() {
           )}
         </div>
       </section>
+      </>
+      )}
 
       {/* Apply Modal */}
       {selectedJob && (
@@ -1471,326 +1518,336 @@ export default function Jobs() {
         </div>
       )}
 
-      {/* Job Detail Modal (2-Column Premium Layout) */}
-      {selectedJobDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
-          <MotionDiv
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-6xl bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 md:p-8 relative max-h-[90vh] overflow-y-auto"
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedJobDetail(null)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors z-10"
-            >
-              <X size={20} />
-            </button>
+    </div>
+  );
+}
 
-            {/* Grid Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4 text-left">
-              
-              {/* Left Column (Main JD & Title) */}
-              <div className="lg:col-span-8 space-y-6">
-                
-                {/* Job Title & Header Card */}
-                <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100 space-y-5">
-                  <div className="flex items-start space-x-3">
-                    <h2 className="text-xl md:text-2xl font-black text-gray-900 leading-snug">
-                      {selectedJobDetail.title}
-                    </h2>
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#D4AF37] text-white text-xs mt-1.5 flex-shrink-0" title="Đã xác thực">
-                      ✓
+interface JobDetailViewProps {
+  job: Job;
+  onClose: () => void;
+  onApply: (type: 'apply' | 'refer') => void;
+  savedJobIds: string[];
+  onSave: (id: string) => void;
+}
+
+function JobDetailView({ job, onClose, onApply, savedJobIds, onSave }: JobDetailViewProps) {
+  const handleShare = () => {
+    if (typeof window !== 'undefined') {
+      const url = `${window.location.origin}/viec-lam?jobId=${job.id}`;
+      navigator.clipboard.writeText(url)
+        .then(() => alert('Đã sao chép liên kết chia sẻ tin tuyển dụng này!'))
+        .catch(() => alert('Không thể sao chép liên kết. Hãy sao chép thủ công trên thanh địa chỉ.'));
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Back Button & Share Info */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <button
+          onClick={onClose}
+          className="inline-flex items-center space-x-2 text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200/80 px-4 py-2.5 rounded-xl transition-all font-bold text-xs uppercase tracking-wider"
+        >
+          <ArrowLeft size={16} />
+          <span>Quay lại danh sách việc làm</span>
+        </button>
+        
+        <button
+          onClick={handleShare}
+          className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-4 py-2.5 rounded-xl transition-all font-bold text-xs uppercase tracking-wider shadow-sm"
+        >
+          <Share2 size={16} className="text-[#D4AF37]" />
+          <span>Chia sẻ công việc</span>
+        </button>
+      </div>
+
+      <MotionDiv
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full bg-white rounded-3xl border border-gray-100 shadow-xl p-6 md:p-8"
+      >
+        {/* Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
+          
+          {/* Left Column (Main JD & Title) */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* Job Title & Header Card */}
+            <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100 space-y-5">
+              <div className="flex items-start space-x-3">
+                <h2 className="text-xl md:text-2xl font-black text-gray-900 leading-snug">
+                  {job.title}
+                </h2>
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#D4AF37] text-white text-xs mt-1.5 flex-shrink-0" title="Đã xác thực">
+                  ✓
+                </span>
+              </div>
+
+              {/* 3 Quick Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Salary */}
+                <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+                  <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center text-[#B8860B]">
+                    <DollarSign size={20} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Mức lương</span>
+                    <span className="text-xs font-black text-gray-900">{job.salary}</span>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <MapPin size={20} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Địa điểm</span>
+                    <span className="text-xs font-black text-gray-900">{job.location}</span>
+                  </div>
+                </div>
+
+                {/* Experience */}
+                <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+                  <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
+                    <Briefcase size={20} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Kinh nghiệm</span>
+                    <span className="text-xs font-black text-gray-900">
+                      {job.level === 'Senior' ? 'Trên 5 năm' : 
+                       job.level === 'Manager' ? 'Trên 8 năm' : 
+                       job.level === 'Director' ? 'Trên 10 năm' : '1 - 3 năm'}
                     </span>
                   </div>
+                </div>
+              </div>
 
-                  {/* 3 Quick Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Salary */}
-                    <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
-                      <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center text-[#B8860B]">
-                        <DollarSign size={20} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Mức lương</span>
-                        <span className="text-xs font-black text-gray-900">{selectedJobDetail.salary}</span>
-                      </div>
-                    </div>
+              {/* Market salary suggestion */}
+              <div>
+                <button 
+                  onClick={() => alert(`Mức lương thị trường trung bình cho vị trí ${job.title} tại ${job.location} dao động từ 22,000,000 đến 48,000,000 VND/tháng.`)}
+                  className="text-xs text-[#B8860B] hover:text-[#D4AF37] font-bold flex items-center space-x-1"
+                >
+                  <span>Xem mức lương thị trường cho vị trí này &gt;&gt;</span>
+                </button>
+              </div>
 
-                    {/* Location */}
-                    <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                        <MapPin size={20} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Địa điểm</span>
-                        <span className="text-xs font-black text-gray-900">{selectedJobDetail.location}</span>
-                      </div>
-                    </div>
+              {/* Application Counter & Deadline Alert Banner */}
+              <div className="p-3.5 rounded-xl bg-[#FFF9E6] border border-[#FFE8A3] flex items-center justify-between text-xs text-yellow-800 font-bold flex-wrap gap-2">
+                <span className="flex items-center space-x-1.5">
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  </span>
+                  <span>Xem số người đã ứng tuyển: <strong>12 người</strong></span>
+                  <span className="bg-red-500 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded ml-1">New</span>
+                </span>
+                <span>Hạn nộp hồ sơ: 28/06/2026 (Còn 28 ngày)</span>
+              </div>
 
-                    {/* Experience */}
-                    <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
-                      <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-                        <Briefcase size={20} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Kinh nghiệm</span>
-                        <span className="text-xs font-black text-gray-900">
-                          {selectedJobDetail.level === 'Senior' ? 'Trên 5 năm' : 
-                           selectedJobDetail.level === 'Manager' ? 'Trên 8 năm' : 
-                           selectedJobDetail.level === 'Director' ? 'Trên 10 năm' : '1 - 3 năm'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+              {/* Referral Commission Banner */}
+              {(job.isHeadhunt || job.skills.some(s => s.toLowerCase() === 'headhunt')) && (
+                <div className="p-3.5 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 flex items-center justify-between text-xs text-[#B8860B] font-bold">
+                  <span className="flex items-center space-x-1.5">
+                    <Award size={16} className="text-[#D4AF37]" />
+                    <span>Phí giới thiệu ứng viên: <strong className="text-[#B8860B]">{job.referralCommission || 'Theo thỏa thuận'}</strong></span>
+                  </span>
+                  <span className="bg-[#D4AF37] text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">Hoa hồng</span>
+                </div>
+              )}
 
-                  {/* Market salary suggestion */}
-                  <div>
-                    <button 
-                      onClick={() => alert(`Mức lương thị trường trung bình cho vị trí ${selectedJobDetail.title} tại ${selectedJobDetail.location} dao động từ 22,000,000 đến 48,000,000 VND/tháng.`)}
-                      className="text-xs text-[#B8860B] hover:text-[#D4AF37] font-bold flex items-center space-x-1"
-                    >
-                      <span>Xem mức lương thị trường cho vị trí này &gt;&gt;</span>
-                    </button>
-                  </div>
-
-                  {/* Application Counter & Deadline Alert Banner */}
-                  <div className="p-3.5 rounded-xl bg-[#FFF9E6] border border-[#FFE8A3] flex items-center justify-between text-xs text-yellow-800 font-bold flex-wrap gap-2">
-                    <span className="flex items-center space-x-1.5">
-                      <span className="flex h-2 w-2 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                      </span>
-                      <span>Xem số người đã ứng tuyển: <strong>12 người</strong></span>
-                      <span className="bg-red-500 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded ml-1">New</span>
-                    </span>
-                    <span>Hạn nộp hồ sơ: 28/06/2026 (Còn 28 ngày)</span>
-                  </div>
-
-                  {/* Referral Commission Banner */}
-                  {(selectedJobDetail.isHeadhunt || selectedJobDetail.skills.some(s => s.toLowerCase() === 'headhunt')) && (
-                    <div className="p-3.5 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 flex items-center justify-between text-xs text-[#B8860B] font-bold">
-                      <span className="flex items-center space-x-1.5">
-                        <Award size={16} className="text-[#D4AF37]" />
-                        <span>Phí giới thiệu ứng viên: <strong className="text-[#B8860B]">{selectedJobDetail.referralCommission || 'Theo thỏa thuận'}</strong></span>
-                      </span>
-                      <span className="bg-[#D4AF37] text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">Hoa hồng</span>
-                    </div>
-                  )}
-
-                  {/* Action buttons (Ứng tuyển ngay / Tự ứng tuyển & Giới thiệu ứng viên & Lưu tin) */}
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    {(selectedJobDetail.isHeadhunt || selectedJobDetail.skills.some(s => s.toLowerCase() === 'headhunt')) ? (
-                      <>
-                        <button
-                          onClick={() => {
-                            setApplyType('apply');
-                            setSelectedJob(selectedJobDetail);
-                            setSelectedJobDetail(null);
-                          }}
-                          className="flex-grow min-w-[140px] py-3 rounded-xl border border-[#D4AF37] hover:bg-[#D4AF37]/5 text-[#B8860B] text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2"
-                        >
-                          <Send size={14} />
-                          <span>Tự ứng tuyển</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setApplyType('refer');
-                            setSelectedJob(selectedJobDetail);
-                            setSelectedJobDetail(null);
-                          }}
-                          className="flex-grow min-w-[160px] py-3 rounded-xl bg-[#D4AF37] hover:bg-[#B8860B] text-white text-xs font-black uppercase tracking-wider transition-colors shadow flex items-center justify-center space-x-2"
-                        >
-                          <Users size={14} />
-                          <span>Giới thiệu ứng viên</span>
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setApplyType('apply');
-                          setSelectedJob(selectedJobDetail);
-                          setSelectedJobDetail(null);
-                        }}
-                        className="flex-grow py-3 rounded-xl bg-[#D4AF37] hover:bg-[#B8860B] text-white text-xs font-black uppercase tracking-wider transition-colors shadow flex items-center justify-center space-x-2"
-                      >
-                        <Send size={14} />
-                        <span>Ứng tuyển ngay</span>
-                      </button>
-                    )}
-
+              {/* Action buttons (Ứng tuyển ngay / Tự ứng tuyển & Giới thiệu ứng viên & Lưu tin) */}
+              <div className="flex flex-wrap gap-3 pt-2">
+                {(job.isHeadhunt || job.skills.some(s => s.toLowerCase() === 'headhunt')) ? (
+                  <>
                     <button
-                      onClick={() => {
-                        toggleSaveJob(selectedJobDetail.id);
-                        alert(savedJobIds.includes(selectedJobDetail.id) ? "Đã bỏ lưu tin tuyển dụng!" : "Lưu tin tuyển dụng thành công!");
-                      }}
-                      className={`px-6 py-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2 ${
-                        savedJobIds.includes(selectedJobDetail.id)
-                          ? 'bg-red-50 border-red-200 text-red-600'
-                          : 'border-gray-300 hover:border-gray-400 text-gray-700 bg-white'
-                      }`}
+                      onClick={() => onApply('apply')}
+                      className="flex-grow min-w-[140px] py-3 rounded-xl border border-[#D4AF37] hover:bg-[#D4AF37]/5 text-[#B8860B] text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2"
                     >
-                      <Heart size={14} className={savedJobIds.includes(selectedJobDetail.id) ? "fill-red-600" : ""} />
-                      <span>{savedJobIds.includes(selectedJobDetail.id) ? 'Đã lưu' : 'Lưu tin'}</span>
+                      <Send size={14} />
+                      <span>Tự ứng tuyển</span>
                     </button>
-                  </div>
-                </div>
-
-                {/* JD Content Container */}
-                <div className="p-6 border border-gray-100 rounded-2xl space-y-6">
-                  <h3 className="text-lg font-black text-gray-900 border-b border-gray-100 pb-3">
-                    Chi tiết tin tuyển dụng
-                  </h3>
-
-                  {/* Tags */}
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap gap-2 text-xs font-semibold">
-                      <span className="text-gray-400 font-bold">Yêu cầu:</span>
-                      <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">
-                        {selectedJobDetail.level === 'Senior' ? 'Trên 5 năm kinh nghiệm chuyên môn' : 
-                         selectedJobDetail.level === 'Manager' ? 'Trên 8 năm kinh nghiệm chuyên môn' : 
-                         selectedJobDetail.level === 'Director' ? 'Trên 10 năm kinh nghiệm chuyên môn' : '1 - 3 năm kinh nghiệm chuyên môn'}
-                      </span>
-                      <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">Đại học trở lên</span>
-                      <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">Nam/Nữ</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 text-xs font-semibold items-center">
-                      <span className="text-gray-400 font-bold">Chuyên môn:</span>
-                      {selectedJobDetail.skills.map((skill, index) => (
-                        <span key={index} className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Job Description Text details */}
-                  <div className="space-y-4 text-xs font-semibold text-gray-700 leading-relaxed">
-                    <h4 className="text-sm font-black text-gray-900">Mô tả công việc</h4>
-                    <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm">
-                      {selectedJobDetail.description || 'Chưa cập nhật'}
-                    </div>
-
-                    <h4 className="text-sm font-black text-gray-900 pt-4">YÊU CẦU CÔNG VIỆC</h4>
-                    <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm">
-                      {selectedJobDetail.requirements || 'Chưa cập nhật'}
-                    </div>
-
-                    <h4 className="text-sm font-black text-gray-900 pt-4">QUYỀN LỢI ĐƯỢC HƯỞNG</h4>
-                    <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm">
-                      {selectedJobDetail.benefits || 'Chưa cập nhật'}
-                    </div>
-
-                    {(selectedJobDetail.workingTime || selectedJobDetail.workingAddress) && (
-                      <>
-                        <h4 className="text-sm font-black text-gray-900 pt-4">THỜI GIAN & ĐỊA ĐIỂM LÀM VIỆC</h4>
-                        <div className="space-y-2 text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm font-semibold">
-                          {selectedJobDetail.workingTime && (
-                            <p className="flex items-center space-x-1.5"><span className="text-gray-400 font-bold">Thời gian:</span> <span className="text-gray-700 font-medium">{selectedJobDetail.workingTime}</span></p>
-                          )}
-                          {selectedJobDetail.workingAddress && (
-                            <p className="flex items-start space-x-1.5"><span className="text-gray-400 font-bold flex-shrink-0">Địa chỉ:</span> <span className="text-gray-700 font-medium">{selectedJobDetail.workingAddress}</span></p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                </div>
-
-              </div>
-
-              {/* Right Column (Company & Common Info) */}
-              <div className="lg:col-span-4 space-y-6">
-                
-                {/* Company Box */}
-                <div className="p-6 rounded-2xl border border-gray-100 space-y-4 bg-white shadow-sm">
-                  <div className="flex items-center space-x-3.5 pb-4 border-b border-gray-100">
-                    <div className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center bg-gray-50 text-[#B8860B] font-extrabold text-sm flex-shrink-0 shadow-inner">
-                      {selectedJobDetail.company.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div className="flex flex-col">
-                      <h4 className="text-xs font-black text-gray-900 leading-snug">
-                        {selectedJobDetail.company}
-                      </h4>
-                      <span className="text-[10px] text-gray-400 font-bold block mt-1">Đã xác minh thông tin</span>
-                    </div>
-                  </div>
-
-                  <ul className="space-y-3 text-xs font-semibold text-gray-600">
-                    <li className="flex justify-between">
-                      <span className="text-gray-400 font-bold">Quy mô:</span>
-                      <span className="text-gray-900 font-black">100 - 500 nhân viên</span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span className="text-gray-400 font-bold">Lĩnh vực:</span>
-                      <span className="text-gray-900 font-black">Tuyển dụng / Nhân sự</span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span className="text-gray-400 font-bold">Địa điểm:</span>
-                      <span className="text-gray-900 font-black">{selectedJobDetail.location}</span>
-                    </li>
-                  </ul>
-
+                    <button
+                      onClick={() => onApply('refer')}
+                      className="flex-grow min-w-[160px] py-3 rounded-xl bg-[#D4AF37] hover:bg-[#B8860B] text-white text-xs font-black uppercase tracking-wider transition-colors shadow flex items-center justify-center space-x-2"
+                    >
+                      <Users size={14} />
+                      <span>Giới thiệu ứng viên</span>
+                    </button>
+                  </>
+                ) : (
                   <button
-                    onClick={() => alert(`Đang tải trang hồ sơ công ty ${selectedJobDetail.company}...`)}
-                    className="w-full py-2.5 rounded-xl border border-[#D4AF37] hover:bg-[#D4AF37]/5 text-[#B8860B] text-[11px] font-black transition-all text-center block uppercase tracking-wider"
+                    onClick={() => onApply('apply')}
+                    className="flex-grow py-3 rounded-xl bg-[#D4AF37] hover:bg-[#B8860B] text-white text-xs font-black uppercase tracking-wider transition-colors shadow flex items-center justify-center space-x-2"
                   >
-                    Xem trang công ty
+                    <Send size={14} />
+                    <span>Ứng tuyển ngay</span>
                   </button>
+                )}
+
+                <button
+                  onClick={() => onSave(job.id)}
+                  className={`px-6 py-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2 ${
+                    savedJobIds.includes(job.id)
+                      ? 'bg-red-50 border-red-200 text-red-600'
+                      : 'border-gray-300 hover:border-gray-400 text-gray-700 bg-white'
+                  }`}
+                >
+                  <Heart size={14} className={savedJobIds.includes(job.id) ? "fill-red-600" : ""} />
+                  <span>{savedJobIds.includes(job.id) ? 'Đã lưu' : 'Lưu tin'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* JD Content Container */}
+            <div className="p-6 border border-gray-100 rounded-2xl space-y-6">
+              <h3 className="text-lg font-black text-gray-900 border-b border-gray-100 pb-3">
+                Chi tiết tin tuyển dụng
+              </h3>
+
+              {/* Tags */}
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                  <span className="text-gray-400 font-bold">Yêu cầu:</span>
+                  <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">
+                    {job.level === 'Senior' ? 'Trên 5 năm kinh nghiệm chuyên môn' : 
+                     job.level === 'Manager' ? 'Trên 8 năm kinh nghiệm chuyên môn' : 
+                     job.level === 'Director' ? 'Trên 10 năm kinh nghiệm chuyên môn' : '1 - 3 năm kinh nghiệm chuyên môn'}
+                  </span>
+                  <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">Đại học trở lên</span>
+                  <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">Nam/Nữ</span>
                 </div>
 
-                {/* General Info Box */}
-                <div className="p-6 rounded-2xl border border-gray-100 space-y-4 bg-white shadow-sm">
-                  <h4 className="text-sm font-black text-gray-900 border-b border-gray-100 pb-3">
-                    Thông tin chung
-                  </h4>
-
-                  <ul className="space-y-3.5 text-xs font-semibold text-gray-600">
-                    <li className="flex justify-between items-center">
-                      <span className="text-gray-400 font-bold">Cấp bậc:</span>
-                      <span className="text-gray-900 font-black">{selectedJobDetail.level}</span>
-                    </li>
-                    <li className="flex justify-between items-center">
-                      <span className="text-gray-400 font-bold">Học vấn:</span>
-                      <span className="text-gray-900 font-black">Đại học trở lên</span>
-                    </li>
-                    <li className="flex justify-between items-center">
-                      <span className="text-gray-400 font-bold">Số lượng tuyển:</span>
-                      <span className="text-gray-900 font-black">1 người</span>
-                    </li>
-                    <li className="flex justify-between items-center">
-                      <span className="text-gray-400 font-bold">Loại hình làm việc:</span>
-                      <span className="text-gray-900 font-black">{selectedJobDetail.type}</span>
-                    </li>
-                  </ul>
+                <div className="flex flex-wrap gap-2 text-xs font-semibold items-center">
+                  <span className="text-gray-400 font-bold">Chuyên môn:</span>
+                  {job.skills.map((skill, index) => (
+                    <span key={index} className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded">
+                      {skill}
+                    </span>
+                  ))}
                 </div>
-
-                {/* Related Categories */}
-                <div className="p-6 rounded-2xl border border-gray-100 space-y-4 bg-white shadow-sm">
-                  <h4 className="text-sm font-black text-gray-900 border-b border-gray-100 pb-3">
-                    Danh mục Nghề liên quan
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                      Nhân sự / Hành chính
-                    </span>
-                    <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                      Tuyển dụng / Headhunt
-                    </span>
-                    <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                      HRBP Partner
-                    </span>
-                  </div>
-                </div>
-
               </div>
 
+              {/* Description */}
+              <div className="space-y-4 text-xs font-semibold text-gray-700 leading-relaxed">
+                <h4 className="text-sm font-black text-gray-900">Mô tả công việc</h4>
+                <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm">
+                  {job.description || 'Chưa cập nhật'}
+                </div>
+
+                <h4 className="text-sm font-black text-gray-900 pt-4">YÊU CẦU CÔNG VIỆC</h4>
+                <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm">
+                  {job.requirements || 'Chưa cập nhật'}
+                </div>
+
+                <h4 className="text-sm font-black text-gray-900 pt-4">QUYỀN LỢI ĐƯỢC HƯỞNG</h4>
+                <div className="space-y-2 whitespace-pre-line text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm">
+                  {job.benefits || 'Chưa cập nhật'}
+                </div>
+
+                {(job.workingTime || job.workingAddress) && (
+                  <>
+                    <h4 className="text-sm font-black text-gray-900 pt-4">THỜI GIAN & ĐỊA ĐIỂM LÀM VIỆC</h4>
+                    <div className="space-y-2 text-gray-600 font-medium bg-[#FDFBF7]/40 p-3.5 rounded-xl border border-[#D4AF37]/5 shadow-sm font-semibold">
+                      {job.workingTime && (
+                        <p className="flex items-center space-x-1.5"><span className="text-gray-400 font-bold">Thời gian:</span> <span className="text-gray-700 font-medium">{job.workingTime}</span></p>
+                      )}
+                      {job.workingAddress && (
+                        <p className="flex items-start space-x-1.5"><span className="text-gray-400 font-bold flex-shrink-0">Địa chỉ:</span> <span className="text-gray-700 font-medium">{job.workingAddress}</span></p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          </MotionDiv>
+          </div>
+
+          {/* Right Column (Company & Common Info) */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Company Box */}
+            <div className="p-6 rounded-2xl border border-gray-100 space-y-4 bg-white shadow-sm text-left">
+              <div className="flex items-center space-x-3.5 pb-4 border-b border-gray-100">
+                <div className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center bg-gray-50 text-[#B8860B] font-extrabold text-sm flex-shrink-0 shadow-inner">
+                  {job.company.substring(0, 2).toUpperCase()}
+                </div>
+                <div className="flex flex-col">
+                  <h4 className="text-xs font-black text-gray-900 leading-snug">
+                    {job.company}
+                  </h4>
+                  <span className="text-[10px] text-gray-400 font-bold block mt-1">Đã xác minh thông tin</span>
+                </div>
+              </div>
+
+              <ul className="space-y-3 text-xs font-semibold text-gray-600 font-medium">
+                <li className="flex justify-between">
+                  <span className="text-gray-400 font-bold">Quy mô:</span>
+                  <span className="text-gray-900 font-black">100 - 500 nhân viên</span>
+                </li>
+                <li className="flex justify-between">
+                  <span className="text-gray-400 font-bold">Lĩnh vực:</span>
+                  <span className="text-gray-900 font-black">Tuyển dụng / Nhân sự</span>
+                </li>
+                <li className="flex justify-between">
+                  <span className="text-gray-400 font-bold">Địa điểm:</span>
+                  <span className="text-gray-900 font-black">{job.location}</span>
+                </li>
+              </ul>
+
+              <button
+                onClick={() => alert(`Đang tải trang hồ sơ công ty ${job.company}...`)}
+                className="w-full py-2.5 rounded-xl border border-[#D4AF37] hover:bg-[#D4AF37]/5 text-[#B8860B] text-[11px] font-black transition-all text-center block uppercase tracking-wider"
+              >
+                Xem trang công ty
+              </button>
+            </div>
+
+            {/* General Info Box */}
+            <div className="p-6 rounded-2xl border border-gray-100 space-y-4 bg-white shadow-sm text-left">
+              <h4 className="text-sm font-black text-gray-900 border-b border-gray-100 pb-3">
+                Thông tin chung
+              </h4>
+
+              <ul className="space-y-3.5 text-xs font-semibold text-gray-600 font-medium">
+                <li className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold">Cấp bậc:</span>
+                  <span className="text-gray-900 font-black">{job.level}</span>
+                </li>
+                <li className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold">Học vấn:</span>
+                  <span className="text-gray-900 font-black">Đại học trở lên</span>
+                </li>
+                <li className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold">Số lượng tuyển:</span>
+                  <span className="text-gray-900 font-black">1 người</span>
+                </li>
+                <li className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold">Loại hình làm việc:</span>
+                  <span className="text-gray-900 font-black">{job.type}</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Related Categories */}
+            <div className="p-6 rounded-2xl border border-gray-100 space-y-4 bg-white shadow-sm text-left">
+              <h4 className="text-sm font-black text-gray-900 border-b border-gray-100 pb-3">
+                Danh mục Nghề liên quan
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                  Nhân sự / Hành chính
+                </span>
+                <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                  Tuyển dụng / Headhunt
+                </span>
+                <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                  HRBP Partner
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </MotionDiv>
     </div>
   );
 }
