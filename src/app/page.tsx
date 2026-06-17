@@ -8,18 +8,11 @@ import {
   UserCheck, 
   Award, 
   Network, 
-  ArrowRight, 
-  UserPlus
+  ArrowRight
 } from 'lucide-react';
-import { MotionDiv, MotionH1, MotionP, MotionSpan } from '@/components/motion';
+import { MotionDiv } from '@/components/motion';
 
 export default function Home() {
-  const stats = [
-    { number: '3500+', label: 'Thành viên', desc: 'Chuyên gia nhân sự toàn quốc' },
-    { number: '26', label: 'Chi nhánh kết nối', desc: 'Mạng lưới HR phủ khắp tỉnh thành' },
-    { number: '15+', label: 'Năm kinh nghiệm', desc: 'Hoạt động trong ngành tuyển dụng' },
-    { number: '98+', label: 'Doanh nghiệp đối tác', desc: 'Ký kết hợp tác săn tài năng' },
-  ];
 
   const benefits = [
     {
@@ -95,97 +88,116 @@ export default function Home() {
 
   return (
     <div className="bg-white">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-24 bg-gradient-to-b from-[#FDFBF7] to-white border-b border-[#D4AF37]/5">
-        {/* Soft golden light balls background decorative elements */}
-        <div className="absolute top-1/4 left-1/10 w-96 h-96 rounded-full bg-[#FFC107]/5 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-10 right-1/10 w-80 h-80 rounded-full bg-[#D4AF37]/5 blur-3xl pointer-events-none" />
+      {/* Banner Section */}
+      <section className="max-w-7xl mx-auto px-6 pt-10 pb-6">
+        <div className="w-full h-64 md:h-[400px] rounded-3xl bg-white border-2 border-dashed border-[#D4AF37]/40 flex items-center justify-center text-center shadow-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#FDFBF7] to-white opacity-60" />
+          <div className="space-y-3 relative z-10 p-6">
+            <span className="text-2xl md:text-3xl font-black text-[#B8860B] uppercase tracking-wider block">
+              Khu vực chứa hình ảnh banner
+            </span>
+            <p className="text-xs text-gray-500 font-bold block max-w-md mx-auto leading-relaxed">
+              (Thư mục gốc sẽ hiển thị banner hình ảnh tại đây sau khi cập nhật tệp ảnh)
+            </p>
+          </div>
+        </div>
+      </section>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          {/* Badge */}
-          <MotionDiv 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#B8860B] font-bold text-xs uppercase tracking-wider mb-8"
-          >
-            <Award size={14} className="text-[#D4AF37]" />
-            <span>Cộng đồng chia sẻ, kết nối và phát triển Tuyển dụng</span>
-          </MotionDiv>
+      {/* Lời chia sẻ từ Ban Sáng lập */}
+      <section className="bg-[#FDFBF7] relative py-16 border-t border-b border-[#D4AF37]/5">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-xs font-bold text-[#B8860B] uppercase tracking-widest mb-3">Ban Sáng Lập</h2>
+            <h3 className="text-3xl md:text-4xl font-black text-gray-900">
+              Lời chia sẻ từ <span className="gradient-gold-text">Nhà sáng lập</span>
+            </h3>
+            <div className="w-16 h-1 bg-[#D4AF37] mx-auto mt-4" />
+          </div>
 
-          {/* Title */}
-          <MotionH1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl font-black text-gray-900 tracking-tight leading-tight max-w-4xl mx-auto mb-6"
-          >
-            Kết nối nhân tài <br />
-            <MotionSpan className="gradient-gold-text">Mở rộng cơ hội nghề nghiệp</MotionSpan>
-          </MotionH1>
-
-          {/* Description */}
-          <MotionP 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-gray-600 font-medium max-w-2xl mx-auto leading-relaxed mb-10"
-          >
-            Cộng đồng dành riêng cho Recruiter, Headhunter và chuyên gia nhân sự trên toàn quốc. Nơi kết nối, học hỏi, chia sẻ cơ hội nghề nghiệp và phát triển sự nghiệp bền vững.
-          </MotionP>
-
-          {/* CTA Buttons */}
-          <MotionDiv 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20"
-          >
-            <Link 
-              href="/tham-gia-ngay" 
-              className="flex items-center justify-center space-x-2 w-full sm:w-auto px-8 py-4 rounded-full text-white font-bold text-sm uppercase tracking-wider gradient-gold-bg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.03] active:scale-95"
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Người 1: Anh Hàng Nghĩa Thuận */}
+            <MotionDiv
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="bg-white p-8 rounded-3xl border border-[#D4AF37]/15 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center relative overflow-hidden"
             >
-              <UserPlus size={16} />
-              <span>Tham gia cộng đồng</span>
-            </Link>
-            <Link 
-              href="/viec-lam" 
-              className="flex items-center justify-center space-x-2 w-full sm:w-auto px-8 py-4 rounded-full text-gray-800 font-bold text-sm uppercase tracking-wider bg-white border border-[#D4AF37]/30 hover:border-[#D4AF37] shadow-md hover:bg-gray-50 transition-all duration-300 hover:scale-[1.03] active:scale-95"
-            >
-              <Briefcase size={16} className="text-[#D4AF37]" />
-              <span>Xem việc làm</span>
-            </Link>
-          </MotionDiv>
+              <div className="absolute top-4 right-6 text-6xl text-[#D4AF37]/10 font-serif pointer-events-none select-none">“</div>
+              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#D4AF37] shadow-inner mb-6 flex-shrink-0">
+                <img
+                  src="/thuan-hn.jpg"
+                  alt="Anh Hàng Nghĩa Thuận"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h4 className="text-lg font-black text-gray-900 mb-1">Hàng Nghĩa Thuận</h4>
+              <span className="text-[11px] font-bold text-[#B8860B] uppercase tracking-wider block">
+                Co-Founder & CEO - Job Service
+              </span>
+              <span className="text-[10px] font-semibold text-gray-400 block mb-4">
+                Founder Cộng đồng Săn Tài Năng
+              </span>
+              <p className="text-xs font-semibold text-gray-600 leading-relaxed italic mt-2">
+                &quot;Săn Tài Năng ra đời với khao khát kết nối hàng ngàn chuyên gia nhân sự và headhunter hàng đầu tại Việt Nam. Chúng tôi tin rằng khi tri thức và cơ hội được sẻ chia rộng rãi, cộng đồng sẽ cùng nhau bứt phá và kiến tạo các giá trị nhân sự bền vững cho doanh nghiệp.&quot;
+              </p>
+            </MotionDiv>
 
-          {/* Dynamic Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto pt-10 border-t border-[#D4AF37]/10">
-            {stats.map((stat, index) => (
-              <MotionDiv
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
-                className="p-6 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex flex-col items-center text-center"
-              >
-                <span className="text-3xl md:text-4xl font-black text-[#D4AF37] mb-2">
-                  {stat.number}
-                </span>
-                <span className="text-sm font-bold text-gray-900 mb-1">
-                  {stat.label}
-                </span>
-                <span className="text-xs text-gray-500 leading-normal">
-                  {stat.desc}
-                </span>
-              </MotionDiv>
-            ))}
+            {/* Người 2: Anh Nguyễn Văn A */}
+            <MotionDiv
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="bg-white p-8 rounded-3xl border border-[#D4AF37]/15 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center relative overflow-hidden"
+            >
+              <div className="absolute top-4 right-6 text-6xl text-[#D4AF37]/10 font-serif pointer-events-none select-none">“</div>
+              <div className="w-24 h-24 rounded-full bg-[#D4AF37]/10 border-2 border-[#D4AF37]/20 flex items-center justify-center text-[#B8860B] font-black text-2xl shadow-inner mb-6 flex-shrink-0">
+                NVA
+              </div>
+              <h4 className="text-lg font-black text-gray-900 mb-1">Nguyễn Văn A</h4>
+              <span className="text-[11px] font-bold text-[#B8860B] uppercase tracking-wider block">
+                Co-Founder
+              </span>
+              <span className="text-[10px] font-semibold text-gray-400 block mb-4">
+                HRM Công ty...................
+              </span>
+              <p className="text-xs font-semibold text-gray-600 leading-relaxed italic mt-2">
+                &quot;Hợp tác chia sẻ ứng viên và chia sẻ kinh nghiệm là chìa khóa vàng giúp nhà tuyển dụng tối ưu hóa chi phí và thời gian. Cộng đồng Săn Tài Năng chính là bệ phóng giúp các Recruiter nâng cao vị thế và chia sẻ những bài học thực chiến giá trị.&quot;
+              </p>
+            </MotionDiv>
+
+            {/* Người 3: Anh Trần Văn B */}
+            <MotionDiv
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-white p-8 rounded-3xl border border-[#D4AF37]/15 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center relative overflow-hidden"
+            >
+              <div className="absolute top-4 right-6 text-6xl text-[#D4AF37]/10 font-serif pointer-events-none select-none">“</div>
+              <div className="w-24 h-24 rounded-full bg-[#D4AF37]/10 border-2 border-[#D4AF37]/20 flex items-center justify-center text-[#B8860B] font-black text-2xl shadow-inner mb-6 flex-shrink-0">
+                TVB
+              </div>
+              <h4 className="text-lg font-black text-gray-900 mb-1">Trần Văn B</h4>
+              <span className="text-[11px] font-bold text-[#B8860B] uppercase tracking-wider block">
+                Co-Founder
+              </span>
+              <span className="text-[10px] font-semibold text-gray-400 block mb-4">
+                .......................
+              </span>
+              <p className="text-xs font-semibold text-gray-600 leading-relaxed italic mt-2">
+                &quot;Kiến tạo một hệ sinh thái kết nối nhân tài minh bạch, uy tín và hiệu quả là mục tiêu hàng đầu của chúng tôi. Tại đây, mỗi Headhunter đều tìm thấy những đối tác chiến lược tin cậy, thúc đẩy doanh số và khẳng định năng lực cá nhân.&quot;
+              </p>
+            </MotionDiv>
           </div>
         </div>
       </section>
 
       {/* Why Join Section */}
-      <section className="section-padding bg-white relative">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+      <section className="bg-white relative py-16">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center max-w-2xl mx-auto mb-12">
             <h2 className="text-xs font-bold text-[#B8860B] uppercase tracking-widest mb-3">Quyền lợi đặc quyền</h2>
             <h3 className="text-3xl md:text-4xl font-black text-gray-900">
               Vì sao nên tham gia <span className="gradient-gold-text">Săn Tài Năng</span>?
@@ -193,7 +205,7 @@ export default function Home() {
             <div className="w-16 h-1 bg-[#D4AF37] mx-auto mt-4" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {benefits.map((benefit, index) => {
               const IconComp = benefit.icon;
               return (
@@ -202,14 +214,14 @@ export default function Home() {
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="card-premium p-8 flex flex-col"
+                  transition={{ duration: 0.5, delay: index * 0.05 }}
+                  className="card-premium p-5 flex flex-col items-center text-center hover:scale-[1.02] transition-transform duration-300 border border-[#D4AF37]/10"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] mb-6">
-                    <IconComp size={24} className="stroke-[2]" />
+                  <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] mb-4 flex-shrink-0">
+                    <IconComp size={20} className="stroke-[2]" />
                   </div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-3">{benefit.title}</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed font-medium flex-grow">{benefit.desc}</p>
+                  <h4 className="text-sm font-black text-gray-900 mb-2 leading-snug min-h-[40px] flex items-center justify-center">{benefit.title}</h4>
+                  <p className="text-[11px] text-gray-500 leading-relaxed font-semibold flex-grow">{benefit.desc}</p>
                 </MotionDiv>
               );
             })}
