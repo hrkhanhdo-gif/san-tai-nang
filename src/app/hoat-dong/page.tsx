@@ -93,7 +93,8 @@ export default function HoatDong() {
     date: '',
     attendees: 50,
     imageType: 'books' as 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee',
-    images: [] as string[]
+    images: [] as string[],
+    showOnHomepage: false
   });
 
   useEffect(() => {
@@ -169,7 +170,8 @@ export default function HoatDong() {
       date: newActivity.date || new Date().toLocaleDateString('vi-VN'),
       attendees: Number(newActivity.attendees) || 0,
       imageType: newActivity.imageType,
-      images: newActivity.images
+      images: newActivity.images,
+      showOnHomepage: newActivity.showOnHomepage
     };
 
     const added = await dbHelper.addActivity(payload);
@@ -183,7 +185,8 @@ export default function HoatDong() {
       date: '',
       attendees: 50,
       imageType: 'books',
-      images: []
+      images: [],
+      showOnHomepage: false
     });
 
     setTimeout(() => {
@@ -342,6 +345,19 @@ export default function HoatDong() {
                   />
                 </div>
 
+                <div className="flex items-center space-x-2 py-1">
+                  <input
+                    type="checkbox"
+                    id="showOnHomepage"
+                    checked={newActivity.showOnHomepage}
+                    onChange={(e) => setNewActivity({ ...newActivity, showOnHomepage: e.target.checked })}
+                    className="w-4 h-4 rounded text-[#D4AF37] border-gray-300 focus:ring-[#D4AF37] cursor-pointer"
+                  />
+                  <label htmlFor="showOnHomepage" className="text-xs font-bold text-gray-700 cursor-pointer select-none">
+                    Hiển thị bài viết này ở mục Hoạt động nổi bật trên Trang Chủ
+                  </label>
+                </div>
+
                 <button
                   type="submit"
                   className="w-full py-3 rounded-xl text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-md"
@@ -400,9 +416,16 @@ export default function HoatDong() {
                     </div>
 
                     {/* Tag */}
-                    <span className="text-[9px] font-extrabold text-[#B8860B] uppercase tracking-wider bg-[#D4AF37]/10 px-2 py-0.5 rounded-md">
-                      {act.category}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[9px] font-extrabold text-[#B8860B] uppercase tracking-wider bg-[#D4AF37]/10 px-2 py-0.5 rounded-md">
+                        {act.category}
+                      </span>
+                      {act.showOnHomepage && (
+                        <span className="text-[9px] font-extrabold text-amber-600 uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded-md">
+                          Trang chủ
+                        </span>
+                      )}
+                    </div>
 
                     {/* Title & Description */}
                     <h4 

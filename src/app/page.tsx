@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Users, 
@@ -11,6 +12,16 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { MotionDiv } from '@/components/motion';
+import { dbHelper, CommunityActivity } from '@/lib/supabase';
+
+const emojiMap: Record<string, string> = {
+  books: '📚',
+  handshake: '🤝',
+  briefcase: '💼',
+  target: '🎯',
+  party: '🎉',
+  coffee: '☕'
+};
 
 export default function Home() {
 
@@ -47,44 +58,16 @@ export default function Home() {
     },
   ];
 
-  const activities = [
-    {
-      title: 'Networking Event',
-      time: 'Định kỳ Hàng tháng',
-      desc: 'Gặp gỡ trực tiếp trao đổi cơ hội hợp tác tuyển dụng và chia sẻ tệp ứng viên chất lượng.',
-      image: '/api/placeholder/400/300'
-    },
-    {
-      title: 'Workshop Nhân sự',
-      time: '2 lần / Quý',
-      desc: 'Đào tạo kỹ năng chuyên sâu từ lập kế hoạch AOP đến xây dựng thương hiệu nhà tuyển dụng.',
-      image: '/api/placeholder/400/300'
-    },
-    {
-      title: 'Career Talk',
-      time: 'Định kỳ Hàng quý',
-      desc: 'Các buổi chia sẻ định hướng nghề nghiệp, kỹ năng phỏng vấn thực tế cho sinh viên các trường Đại học.',
-      image: '/api/placeholder/400/300'
-    },
-    {
-      title: 'Mentor Recruiter',
-      time: 'Học tập liên tục',
-      desc: 'Chương trình cố vấn 1-1 hỗ trợ các bạn trẻ định hướng và phát triển sự nghiệp trong ngành tuyển dụng.',
-      image: '/api/placeholder/400/300'
-    },
-    {
-      title: 'HR Community Meetup',
-      time: 'Thường niên',
-      desc: 'Đại hội gắn kết cộng đồng nhân sự Việt Nam với sự tham gia của hơn 500+ khách mời.',
-      image: '/api/placeholder/400/300'
-    },
-    {
-      title: 'Talent Sharing',
-      time: 'Hoạt động hàng ngày',
-      desc: 'Diễn đàn chia sẻ CV ứng viên tiềm năng và hỗ trợ kết nối việc làm nhanh chóng.',
-      image: '/api/placeholder/400/300'
+  const [activitiesList, setActivitiesList] = useState<CommunityActivity[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      const all = await dbHelper.getActivities();
+      const featured = all.filter(act => act.showOnHomepage);
+      setActivitiesList(featured);
     }
-  ];
+    load();
+  }, []);
 
   return (
     <div className="bg-white">
@@ -244,79 +227,87 @@ export default function Home() {
           </div>
 
           {/* Timeline and Interactive Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            {/* Timeline */}
-            <div className="space-y-8 relative before:absolute before:left-6 before:top-4 before:bottom-4 before:w-[2px] before:bg-[#D4AF37]/20">
-              {activities.map((act, index) => (
-                <MotionDiv
-                  key={index}
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex items-start space-x-6 relative pl-10 md:pl-12"
-                >
-                  {/* Timeline dot */}
-                  <div className="absolute left-4 w-4 h-4 rounded-full bg-[#D4AF37] border-4 border-white shadow-md flex-shrink-0 z-10" />
+          {activitiesList.length === 0 ? (
+            <div className="text-center py-16 px-6 max-w-xl mx-auto rounded-3xl border border-dashed border-[#D4AF37]/25 bg-white shadow-sm">
+              <span className="text-4xl block mb-4">🌟</span>
+              <h4 className="text-base font-black text-gray-900 mb-2">Chưa có hoạt động nổi bật nào được chọn hiển thị</h4>
+              <p className="text-xs text-[#B8860B] font-bold tracking-wider uppercase mb-2">Thông tin cập nhật liên tục</p>
+              <p className="text-xs text-gray-500 font-semibold leading-relaxed mb-6">
+                Ban quản trị cộng đồng chưa lựa chọn hoạt động nổi bật nào để ghim lên Trang chủ. Bạn có thể xem toàn bộ các hoạt động, sự kiện đang diễn ra tại trang Hoạt động.
+              </p>
+              <Link
+                href="/hoat-dong"
+                className="inline-flex items-center space-x-2 px-6 py-3 rounded-full text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-md hover:scale-[1.03] transition-transform duration-300"
+              >
+                <span>Xem trang hoạt động</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+              {/* Timeline */}
+              <div className="space-y-8 relative before:absolute before:left-6 before:top-4 before:bottom-4 before:w-[2px] before:bg-[#D4AF37]/20">
+                {activitiesList.map((act, index) => (
+                  <MotionDiv
+                    key={act.id}
+                    initial={{ opacity: 0, x: -30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className="flex items-start space-x-6 relative pl-10 md:pl-12"
+                  >
+                    {/* Timeline dot */}
+                    <div className="absolute left-4 w-4 h-4 rounded-full bg-[#D4AF37] border-4 border-white shadow-md flex-shrink-0 z-10" />
+                    
+                    <div className="p-6 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex-grow hover:border-[#D4AF37]/35 transition-colors">
+                      <span className="inline-block text-[10px] font-extrabold text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-2.5 py-1 rounded-md mb-3">
+                        {act.date || 'Đang diễn ra'}
+                      </span>
+                      <h4 className="text-lg font-bold text-gray-900 mb-2">{act.title}</h4>
+                      <p className="text-sm text-gray-600 leading-relaxed font-medium line-clamp-3">{act.description}</p>
+                    </div>
+                  </MotionDiv>
+                ))}
+              </div>
+
+              {/* Premium Gold/White Gallery */}
+              <div className="grid grid-cols-2 gap-4 lg:sticky lg:top-24">
+                {activitiesList.slice(0, 4).map((act, index) => {
+                  const hasImage = act.images && act.images.length > 0;
+                  const emoji = emojiMap[act.imageType || 'books'] || '📚';
                   
-                  <div className="p-6 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex-grow hover:border-[#D4AF37]/35 transition-colors">
-                    <span className="inline-block text-[10px] font-extrabold text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-2.5 py-1 rounded-md mb-3">
-                      {act.time}
-                    </span>
-                    <h4 className="text-lg font-bold text-gray-900 mb-2">{act.title}</h4>
-                    <p className="text-sm text-gray-600 leading-relaxed font-medium">{act.desc}</p>
-                  </div>
-                </MotionDiv>
-              ))}
-            </div>
-
-            {/* Premium Gold/White Gallery */}
-            <div className="grid grid-cols-2 gap-4 lg:sticky lg:top-24">
-              {/* Photo Card 1 */}
-              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex flex-col space-y-4 hover:border-[#D4AF37]/35 transition-all">
-                <div className="aspect-[4/3] rounded-xl gradient-gold-bg flex items-center justify-center text-white font-black text-center p-3 text-sm">
-                  Connecting Talent HR Expo
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-[#B8860B] font-bold">EVENT</span>
-                  <span className="text-sm font-bold text-gray-900">Offline Networking</span>
-                </div>
-              </div>
-
-              {/* Photo Card 2 */}
-              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex flex-col space-y-4 hover:border-[#D4AF37]/35 transition-all mt-6">
-                <div className="aspect-[4/3] rounded-xl bg-gradient-to-br from-[#E6C687] to-[#D4AF37] flex items-center justify-center text-white font-black text-center p-3 text-sm">
-                  HRBP Workshop Series
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-[#B8860B] font-bold">ACADEMY</span>
-                  <span className="text-sm font-bold text-gray-900">Workshop Nhân sự</span>
-                </div>
-              </div>
-
-              {/* Photo Card 3 */}
-              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex flex-col space-y-4 hover:border-[#D4AF37]/35 transition-all -mt-6">
-                <div className="aspect-[4/3] rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] flex items-center justify-center text-white font-black text-center p-3 text-sm">
-                  University Career Path
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-[#B8860B] font-bold">SHARING</span>
-                  <span className="text-sm font-bold text-gray-900">Career Guidance Talk</span>
-                </div>
-              </div>
-
-              {/* Photo Card 4 */}
-              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex flex-col space-y-4 hover:border-[#D4AF37]/35 transition-all">
-                <div className="aspect-[4/3] rounded-xl gradient-gold-bg flex items-center justify-center text-white font-black text-center p-3 text-sm">
-                  Recruiter 1-ON-1 Mentor
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-[#B8860B] font-bold">COACHING</span>
-                  <span className="text-sm font-bold text-gray-900">Mentor Recruiter Program</span>
-                </div>
+                  // Staggered layout spacing
+                  const spacingClass = index === 1 ? 'mt-6' : index === 2 ? '-mt-6' : '';
+                  
+                  return (
+                    <div 
+                      key={act.id}
+                      className={`p-4 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex flex-col space-y-4 hover:border-[#D4AF37]/35 transition-all ${spacingClass}`}
+                    >
+                      <div className="aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-[#FDFBF7] to-[#D4AF37]/10 border border-[#D4AF37]/10 flex items-center justify-center text-white font-black text-center p-3 text-sm relative">
+                        {hasImage ? (
+                          <img 
+                            src={act.images![0]} 
+                            alt={act.title} 
+                            className="w-full h-full object-cover absolute inset-0"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center space-y-2">
+                            <span className="text-3xl">{emoji}</span>
+                            <span className="text-[10px] text-[#B8860B] font-bold uppercase tracking-wider">{act.category}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs text-[#B8860B] font-bold uppercase">{act.category}</span>
+                        <span className="text-sm font-bold text-gray-900 line-clamp-1">{act.title}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 

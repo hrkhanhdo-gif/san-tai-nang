@@ -98,6 +98,7 @@ export interface CommunityActivity {
   comments: ActivityComment[];
   imageType?: 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee';
   images?: string[]; // Array of up to 3 image base64 strings
+  showOnHomepage?: boolean;
   created_at: string;
 }
 
