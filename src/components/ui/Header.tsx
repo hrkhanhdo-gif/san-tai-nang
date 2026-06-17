@@ -50,7 +50,7 @@ export default function Header() {
   const navLinks = [
     { name: 'Trang chủ', href: '/' },
     { name: 'Về Thuận HN', href: '/ve-thuan-hn' },
-    { name: 'Dịch vụ', href: '/dich-vu' },
+    { name: 'Hoạt động', href: '/hoat-dong' },
     { name: 'Việc làm', href: '/viec-lam' },
     { name: 'Cộng đồng', href: '/cong-dong' },
     { name: 'Liên hệ', href: '/lien-he' },
