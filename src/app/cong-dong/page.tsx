@@ -301,6 +301,88 @@ export default function Community() {
         </div>
       </section>
 
+      {/* Organizational Structure Section */}
+      <section className="py-16 bg-[#FDFBF7]/30 border-b border-gray-100 text-center relative overflow-hidden">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="text-xs font-bold text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-3 py-1 rounded-full">
+              Ban Điều Hành
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mt-4">Cơ cấu tổ chức Cộng đồng</h2>
+            <div className="w-12 h-0.5 bg-[#D4AF37] mx-auto mt-3" />
+          </div>
+
+          {/* Org Chart Container */}
+          <div className="flex flex-col items-center justify-center relative py-6">
+            
+            {/* Founder Card (Top) */}
+            <MotionDiv
+              initial={{ opacity: 0, y: -20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="relative z-10 flex flex-col items-center"
+            >
+              <div className="relative p-1 rounded-full bg-gradient-to-tr from-[#D4AF37] via-[#FFF9E6] to-[#B8860B] shadow-lg">
+                <img
+                  src="/thuan-hn.jpg"
+                  alt="Founder Hằng Nghĩa Thuận"
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-inner"
+                />
+                <span className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-[#B8860B] text-white text-[9px] font-black uppercase px-3 py-0.5 rounded-full shadow-sm tracking-widest whitespace-nowrap">
+                  FOUNDER
+                </span>
+              </div>
+              <div className="mt-5 bg-white border border-[#D4AF37]/20 rounded-2xl p-5 shadow-sm max-w-xs transition-all hover:scale-105 hover:border-[#D4AF37]/50 duration-300">
+                <h4 className="text-base font-black text-gray-900">Anh Hàng Nghĩa Thuận</h4>
+                <p className="text-[10px] text-[#B8860B] font-bold uppercase tracking-wider mt-0.5">Sáng lập Cộng đồng</p>
+                <div className="w-8 h-[1px] bg-[#D4AF37]/20 mx-auto my-2.5" />
+                <p className="text-xs text-gray-600 font-semibold leading-relaxed">
+                  Founder cộng đồng Săn Tài Năng & CEO Job Service
+                </p>
+              </div>
+            </MotionDiv>
+
+            {/* Connecting Vertical Line */}
+            <div className="w-[3px] h-14 bg-gradient-to-b from-[#D4AF37] to-gray-300 my-1 relative">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-[#D4AF37] rounded-full shadow-sm" />
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-300 rounded-full shadow-sm" />
+            </div>
+
+            {/* Secretary / Admin Card (Below) */}
+            <MotionDiv
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="relative z-10 flex flex-col items-center"
+            >
+              <div className="relative p-1 rounded-full bg-gradient-to-tr from-gray-300 via-gray-100 to-gray-400 shadow-md">
+                <img
+                  src="/nguyen-thi-c.png"
+                  alt="Secretary Nguyễn Thị C"
+                  className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-inner"
+                />
+                <span className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-gray-600 text-white text-[8px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-sm tracking-wider whitespace-nowrap">
+                  THƯ KÝ / ADMIN
+                </span>
+              </div>
+              <div className="mt-5 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm max-w-xs transition-all hover:scale-105 hover:border-gray-300 duration-300">
+                <h4 className="text-sm font-black text-gray-900">Chị Nguyễn Thị C</h4>
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Thư ký Ban điều hành</p>
+                <div className="w-8 h-[1px] bg-gray-200 mx-auto my-2.5" />
+                <p className="text-xs text-gray-500 font-semibold leading-relaxed">
+                  Điều phối các sự kiện, quản lý duyệt hồ sơ thành viên & Quản trị viên cộng đồng Săn Tài Năng
+                </p>
+              </div>
+            </MotionDiv>
+
+          </div>
+        </div>
+        <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#D4AF37]/10 to-transparent pointer-events-none" />
+      </section>
+
+
       {/* Tab Switcher for Admin */}
       {currentUser?.role === 'admin' && (
         <div className="max-w-7xl mx-auto px-6 border-b border-gray-100 flex space-x-6 justify-center md:justify-start flex-wrap">
