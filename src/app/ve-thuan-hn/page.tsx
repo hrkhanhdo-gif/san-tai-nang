@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { 
   Briefcase, 
   Award, 
@@ -11,8 +12,18 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { MotionDiv } from '@/components/motion';
+import { dbHelper, SystemSettings } from '@/lib/supabase';
 
 export default function About() {
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({});
+
+  useEffect(() => {
+    async function load() {
+      const settings = await dbHelper.getSystemSettings();
+      setSystemSettings(settings);
+    }
+    load();
+  }, []);
   const achievements = [
     { value: '98+', label: 'Doanh nghiệp đối tác', desc: 'Hợp tác tuyển chọn nhân sự đa ngành' },
     { value: '3000+', label: 'Ứng viên đã phỏng vấn', desc: 'Đánh giá năng lực chuyên sâu' },
@@ -110,7 +121,7 @@ export default function About() {
             <div className="relative w-full max-w-[400px] aspect-[4/5] rounded-3xl border-2 border-[#D4AF37]/30 bg-[#FDFBF7] shadow-xl overflow-hidden group">
               {/* Profile Image */}
               <img 
-                src="/thuan-hn.jpg" 
+                src={systemSettings.thuanHn_image || systemSettings.founder1_image || '/thuan-hn.jpg'} 
                 alt="CEO Hàng Nghĩa Thuận"
                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
               />
@@ -120,9 +131,11 @@ export default function About() {
               {/* Text on top of image */}
               <div className="absolute bottom-0 left-0 right-0 p-6 text-white space-y-4">
                 <div>
-                  <h3 className="text-xl font-black tracking-wide">HÀNG NGHĨA THUẬN</h3>
+                  <h3 className="text-xl font-black tracking-wide">
+                    {systemSettings.founder1_name || 'HÀNG NGHĨA THUẬN'}
+                  </h3>
                   <p className="text-xs text-[#D4AF37] font-bold tracking-widest uppercase mt-1">
-                    CEO - JOB SERVICE
+                    {systemSettings.thuanHn_role || 'CEO - JOB SERVICE'}
                   </p>
                 </div>
                 
@@ -130,15 +143,19 @@ export default function About() {
                 <div className="w-full bg-black/40 backdrop-blur-md rounded-xl p-3 border border-white/10 space-y-1.5 text-[11px] font-semibold text-white/90">
                   <div className="flex items-center space-x-2">
                     <MapPin size={12} className="text-[#D4AF37]" />
-                    <span>KDC Lê Thành, An Lạc, TP.HCM</span>
+                    <span>{systemSettings.thuanHn_address || 'KDC Lê Thành, An Lạc, TP.HCM'}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Phone size={12} className="text-[#D4AF37]" />
-                    <a href="tel:+84986162568" className="hover:text-[#D4AF37] transition-colors">+84 98 61 62 568</a>
+                    <a href={`tel:${(systemSettings.thuanHn_phone || '+84 98 61 62 568').replace(/\s+/g, '')}`} className="hover:text-[#D4AF37] transition-colors">
+                      {systemSettings.thuanHn_phone || '+84 98 61 62 568'}
+                    </a>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Mail size={12} className="text-[#D4AF37]" />
-                    <a href="mailto:ttg.thuanhn@gmail.com" className="hover:text-[#D4AF37] transition-colors">ttg.thuanhn@gmail.com</a>
+                    <a href={`mailto:${systemSettings.thuanHn_email || 'ttg.thuanhn@gmail.com'}`} className="hover:text-[#D4AF37] transition-colors">
+                      {systemSettings.thuanHn_email || 'ttg.thuanhn@gmail.com'}
+                    </a>
                   </div>
                 </div>
               </div>
@@ -154,22 +171,26 @@ export default function About() {
           >
             <span className="text-xs font-bold text-[#B8860B] uppercase tracking-widest">Người sáng lập cộng đồng</span>
             <h1 className="text-3xl md:text-5xl font-black text-gray-900 leading-tight">
-              Hàng Nghĩa Thuận
+              {systemSettings.founder1_name || 'Hàng Nghĩa Thuận'}
             </h1>
             <h2 className="text-lg md:text-xl font-bold text-[#D4AF37] -mt-3">
-              Co-Founder & CEO - Job Service
+              {systemSettings.thuanHn_role || 'Co-Founder & CEO - Job Service'}
             </h2>
             <div className="w-16 h-1 bg-[#D4AF37] mb-4" />
 
             <p className="text-base text-gray-700 leading-relaxed font-semibold">
-              Hơn 15 năm kinh nghiệm trong lĩnh vực tuyển dụng và thu hút tài năng cho các doanh nghiệp đa ngành trong và ngoài nước.
+              {systemSettings.thuanHn_about1 || 'Hơn 15 năm kinh nghiệm trong lĩnh vực tuyển dụng và thu hút tài năng cho các doanh nghiệp đa ngành trong và ngoài nước.'}
             </p>
-            <p className="text-sm text-gray-600 leading-relaxed font-medium">
-              Tôi có thế mạnh chuyên sâu trong việc hoạch định chiến lược nhân lực toàn diện, thiết kế quy chuẩn phỏng vấn và trực tiếp săn lùng các ứng viên cấp trung, cấp cao, nhân sự chủ chốt cho doanh nghiệp. 
-            </p>
-            <p className="text-sm text-gray-600 leading-relaxed font-medium">
-              Từng chịu trách nhiệm triển khai hệ thống tuyển dụng cho tập đoàn sản xuất - dịch vụ quy mô lớn hơn 3.500 nhân sự và 26 chi nhánh toàn quốc, tôi luôn hướng tới triết lý: <strong>Nhân sự là đối tác chiến lược đồng hành</strong> cùng sự phát triển bền vững của doanh nghiệp.
-            </p>
+            {systemSettings.thuanHn_about2 && (
+              <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                {systemSettings.thuanHn_about2}
+              </p>
+            )}
+            {systemSettings.thuanHn_about3 && (
+              <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                {systemSettings.thuanHn_about3}
+              </p>
+            )}
 
             <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-[#D4AF37]/15 flex items-start space-x-4">
               <Building className="text-[#D4AF37] flex-shrink-0 mt-0.5" size={24} />

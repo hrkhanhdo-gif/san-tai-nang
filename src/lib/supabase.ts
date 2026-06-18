@@ -102,6 +102,54 @@ export interface CommunityActivity {
   created_at: string;
 }
 
+export interface OrgMember {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  image: string; // Base64 or URL
+  roleType: 'founder' | 'secretary' | 'member';
+  created_at: string;
+}
+
+export interface HonoredMember {
+  id: string;
+  name: string;
+  company: string;
+  title: string;
+  image: string; // Base64 or URL
+  reason: string;
+  created_at: string;
+}
+
+export interface SystemSettings {
+  homepageBannerImage?: string;
+  
+  founder1_name?: string;
+  founder1_role?: string;
+  founder1_image?: string;
+  founder1_quote?: string;
+  
+  founder2_name?: string;
+  founder2_role?: string;
+  founder2_image?: string;
+  founder2_quote?: string;
+  
+  founder3_name?: string;
+  founder3_role?: string;
+  founder3_image?: string;
+  founder3_quote?: string;
+  
+  thuanHn_about1?: string;
+  thuanHn_about2?: string;
+  thuanHn_about3?: string;
+  thuanHn_role?: string;
+  thuanHn_image?: string;
+  thuanHn_phone?: string;
+  thuanHn_email?: string;
+  thuanHn_address?: string;
+}
+
 const DEFAULT_JOBS: Job[] = [
   {
     id: 'job-1',
@@ -199,10 +247,13 @@ export const dbHelper = {
   // --- JOBS API ---
   async getJobs(): Promise<Job[]> {
     if (typeof window !== 'undefined') {
-      if (!localStorage.getItem('sntn_cleared_mock_data_v4')) {
+      if (!localStorage.getItem('sntn_cleared_mock_data_v5')) {
         localStorage.removeItem('sntn_jobs');
         localStorage.removeItem('sntn_activities');
-        localStorage.setItem('sntn_cleared_mock_data_v4', 'true');
+        localStorage.removeItem('sntn_org_members');
+        localStorage.removeItem('sntn_honored_members');
+        localStorage.removeItem('sntn_system_settings');
+        localStorage.setItem('sntn_cleared_mock_data_v5', 'true');
       }
       const local = localStorage.getItem('sntn_jobs');
       if (local) {
@@ -416,6 +467,106 @@ export const dbHelper = {
       }
     }
     return newComment;
+  },
+
+  // --- ORG MEMBERS API ---
+  async getOrgMembers(): Promise<OrgMember[]> {
+    if (typeof window === 'undefined') return [];
+    const local = localStorage.getItem('sntn_org_members');
+    if (local) {
+      return JSON.parse(local);
+    } else {
+      const defaults: OrgMember[] = [
+        {
+          id: 'org-1',
+          name: 'Anh Hàng Nghĩa Thuận',
+          role: 'Sáng lập Cộng đồng Săn Tài Năng & CEO Job Service',
+          company: 'Job Service',
+          image: '/thuan-hn.jpg',
+          roleType: 'founder',
+          created_at: new Date().toISOString()
+        },
+        {
+          id: 'org-2',
+          name: 'Chị Nguyễn Thị C',
+          role: 'Thư ký Ban điều hành & Quản trị viên',
+          company: 'Săn Tài Năng',
+          image: '/nguyen-thi-c.png',
+          roleType: 'secretary',
+          created_at: new Date().toISOString()
+        }
+      ];
+      localStorage.setItem('sntn_org_members', JSON.stringify(defaults));
+      return defaults;
+    }
+  },
+  async saveOrgMember(member: OrgMember): Promise<void> {
+    if (typeof window === 'undefined') return;
+    const members = await this.getOrgMembers();
+    const idx = members.findIndex(m => m.id === member.id);
+    if (idx !== -1) {
+      members[idx] = member;
+    } else {
+      members.push(member);
+    }
+    localStorage.setItem('sntn_org_members', JSON.stringify(members));
+  },
+  async deleteOrgMember(id: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    const members = await this.getOrgMembers();
+    const filtered = members.filter(m => m.id !== id);
+    localStorage.setItem('sntn_org_members', JSON.stringify(filtered));
+  },
+
+  // --- HONORED MEMBERS API ---
+  async getHonoredMembers(): Promise<HonoredMember[]> {
+    if (typeof window === 'undefined') return [];
+    const local = localStorage.getItem('sntn_honored_members');
+    if (local) {
+      return JSON.parse(local);
+    } else {
+      const defaults: HonoredMember[] = [
+        {
+          id: 'honored-1',
+          name: 'Nguyễn Thị Mai Chi',
+          company: 'TechVina Group',
+          title: 'Talent Acquisition Manager',
+          image: '',
+          reason: 'Đã xuất sắc kết nối và chia sẻ nguồn ứng viên tuyển dụng lập trình viên cấp cao cho các đối tác trong mùa cao điểm năm 2026.',
+          created_at: new Date().toISOString()
+        }
+      ];
+      localStorage.setItem('sntn_honored_members', JSON.stringify(defaults));
+      return defaults;
+    }
+  },
+  async saveHonoredMember(member: HonoredMember): Promise<void> {
+    if (typeof window === 'undefined') return;
+    const members = await this.getHonoredMembers();
+    const idx = members.findIndex(m => m.id === member.id);
+    if (idx !== -1) {
+      members[idx] = member;
+    } else {
+      members.push(member);
+    }
+    localStorage.setItem('sntn_honored_members', JSON.stringify(members));
+  },
+  async deleteHonoredMember(id: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    const members = await this.getHonoredMembers();
+    const filtered = members.filter(m => m.id !== id);
+    localStorage.setItem('sntn_honored_members', JSON.stringify(filtered));
+  },
+
+  // --- SYSTEM SETTINGS API ---
+  async getSystemSettings(): Promise<SystemSettings> {
+    if (typeof window === 'undefined') return {};
+    const local = localStorage.getItem('sntn_system_settings');
+    return local ? JSON.parse(local) : {};
+  },
+  async saveSystemSettings(settings: SystemSettings): Promise<void> {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('sntn_system_settings', JSON.stringify(settings));
   }
 };
 

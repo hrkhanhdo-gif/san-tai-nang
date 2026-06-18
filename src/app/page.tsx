@@ -12,7 +12,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { MotionDiv } from '@/components/motion';
-import { dbHelper, CommunityActivity } from '@/lib/supabase';
+import { dbHelper, CommunityActivity, SystemSettings } from '@/lib/supabase';
 
 const emojiMap: Record<string, string> = {
   books: '📚',
@@ -59,31 +59,50 @@ export default function Home() {
   ];
 
   const [activitiesList, setActivitiesList] = useState<CommunityActivity[]>([]);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({});
 
   useEffect(() => {
     async function load() {
       const all = await dbHelper.getActivities();
       const featured = all.filter(act => act.showOnHomepage);
       setActivitiesList(featured);
+
+      const settings = await dbHelper.getSystemSettings();
+      setSystemSettings(settings);
     }
     load();
   }, []);
+
+  const getInitials = (name: string) => {
+    if (!name) return 'SNTN';
+    return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(-3);
+  };
 
   return (
     <div className="bg-white">
       {/* Banner Section */}
       <section className="max-w-7xl mx-auto px-6 pt-10 pb-6">
-        <div className="w-full h-64 md:h-[400px] rounded-3xl bg-white border-2 border-dashed border-[#D4AF37]/40 flex items-center justify-center text-center shadow-sm relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#FDFBF7] to-white opacity-60" />
-          <div className="space-y-3 relative z-10 p-6">
-            <span className="text-2xl md:text-3xl font-black text-[#B8860B] uppercase tracking-wider block">
-              Khu vực chứa hình ảnh banner
-            </span>
-            <p className="text-xs text-gray-500 font-bold block max-w-md mx-auto leading-relaxed">
-              (Thư mục gốc sẽ hiển thị banner hình ảnh tại đây sau khi cập nhật tệp ảnh)
-            </p>
+        {systemSettings.homepageBannerImage ? (
+          <div className="w-full h-64 md:h-[400px] rounded-3xl overflow-hidden shadow-lg relative border border-gray-100">
+            <img
+              src={systemSettings.homepageBannerImage}
+              alt="Community Banner"
+              className="w-full h-full object-cover"
+            />
           </div>
-        </div>
+        ) : (
+          <div className="w-full h-64 md:h-[400px] rounded-3xl bg-white border-2 border-dashed border-[#D4AF37]/40 flex items-center justify-center text-center shadow-sm relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#FDFBF7] to-white opacity-60" />
+            <div className="space-y-3 relative z-10 p-6">
+              <span className="text-2xl md:text-3xl font-black text-[#B8860B] uppercase tracking-wider block">
+                Khu vực chứa hình ảnh banner
+              </span>
+              <p className="text-xs text-gray-500 font-bold block max-w-md mx-auto leading-relaxed">
+                (Thư mục gốc sẽ hiển thị banner hình ảnh tại đây sau khi cập nhật tệp ảnh)
+              </p>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Lời chia sẻ từ Ban Sáng lập */}
@@ -107,22 +126,30 @@ export default function Home() {
               className="bg-white p-8 rounded-3xl border border-[#D4AF37]/15 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center relative overflow-hidden"
             >
               <div className="absolute top-4 right-6 text-6xl text-[#D4AF37]/10 font-serif pointer-events-none select-none">“</div>
-              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#D4AF37] shadow-inner mb-6 flex-shrink-0">
-                <img
-                  src="/thuan-hn.jpg"
-                  alt="Anh Hàng Nghĩa Thuận"
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#D4AF37] shadow-inner mb-6 flex-shrink-0 bg-[#D4AF37]/5 flex items-center justify-center">
+                {systemSettings.founder1_image ? (
+                  <img
+                    src={systemSettings.founder1_image}
+                    alt={systemSettings.founder1_name || "Anh Hàng Nghĩa Thuận"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[#B8860B] font-black text-2xl">
+                    {getInitials(systemSettings.founder1_name || 'Hàng Nghĩa Thuận')}
+                  </span>
+                )}
               </div>
-              <h4 className="text-lg font-black text-gray-900 mb-1">Hàng Nghĩa Thuận</h4>
+              <h4 className="text-lg font-black text-gray-900 mb-1">
+                {systemSettings.founder1_name || 'Hàng Nghĩa Thuận'}
+              </h4>
               <span className="text-[11px] font-bold text-[#B8860B] uppercase tracking-wider block">
-                Co-Founder & CEO - Job Service
+                {systemSettings.founder1_role || 'Co-Founder & CEO - Job Service'}
               </span>
               <span className="text-[10px] font-semibold text-gray-400 block mb-4">
                 Founder Cộng đồng Săn Tài Năng
               </span>
               <p className="text-xs font-semibold text-gray-600 leading-relaxed italic mt-2">
-                &quot;Săn Tài Năng ra đời với khao khát kết nối hàng ngàn chuyên gia nhân sự và headhunter hàng đầu tại Việt Nam. Chúng tôi tin rằng khi tri thức và cơ hội được sẻ chia rộng rãi, cộng đồng sẽ cùng nhau bứt phá và kiến tạo các giá trị nhân sự bền vững cho doanh nghiệp.&quot;
+                &quot;{systemSettings.founder1_quote || 'Săn Tài Năng ra đời với khao khát kết nối hàng ngàn chuyên gia nhân sự và headhunter hàng đầu tại Việt Nam. Chúng tôi tin rằng khi tri thức và cơ hội được sẻ chia rộng rãi, cộng đồng sẽ cùng nhau bứt phá và kiến tạo các giá trị nhân sự bền vững cho doanh nghiệp.'}&quot;
               </p>
             </MotionDiv>
 
@@ -135,18 +162,30 @@ export default function Home() {
               className="bg-white p-8 rounded-3xl border border-[#D4AF37]/15 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center relative overflow-hidden"
             >
               <div className="absolute top-4 right-6 text-6xl text-[#D4AF37]/10 font-serif pointer-events-none select-none">“</div>
-              <div className="w-24 h-24 rounded-full bg-[#D4AF37]/10 border-2 border-[#D4AF37]/20 flex items-center justify-center text-[#B8860B] font-black text-2xl shadow-inner mb-6 flex-shrink-0">
-                NVA
+              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#D4AF37]/20 shadow-inner mb-6 flex-shrink-0 bg-[#D4AF37]/10 flex items-center justify-center">
+                {systemSettings.founder2_image ? (
+                  <img
+                    src={systemSettings.founder2_image}
+                    alt={systemSettings.founder2_name || "Anh Nguyễn Văn A"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[#B8860B] font-black text-2xl">
+                    {getInitials(systemSettings.founder2_name || 'Nguyễn Văn A')}
+                  </span>
+                )}
               </div>
-              <h4 className="text-lg font-black text-gray-900 mb-1">Nguyễn Văn A</h4>
+              <h4 className="text-lg font-black text-gray-900 mb-1">
+                {systemSettings.founder2_name || 'Nguyễn Văn A'}
+              </h4>
               <span className="text-[11px] font-bold text-[#B8860B] uppercase tracking-wider block">
-                Co-Founder
+                {systemSettings.founder2_role || 'Co-Founder'}
               </span>
               <span className="text-[10px] font-semibold text-gray-400 block mb-4">
-                HRM Công ty...................
+                HRM Công ty đối tác
               </span>
               <p className="text-xs font-semibold text-gray-600 leading-relaxed italic mt-2">
-                &quot;Hợp tác chia sẻ ứng viên và chia sẻ kinh nghiệm là chìa khóa vàng giúp nhà tuyển dụng tối ưu hóa chi phí và thời gian. Cộng đồng Săn Tài Năng chính là bệ phóng giúp các Recruiter nâng cao vị thế và chia sẻ những bài học thực chiến giá trị.&quot;
+                &quot;{systemSettings.founder2_quote || 'Hợp tác chia sẻ ứng viên và chia sẻ kinh nghiệm là chìa khóa vàng giúp nhà tuyển dụng tối ưu hóa chi phí và thời gian. Cộng đồng Săn Tài Năng chính là bệ phóng giúp các Recruiter nâng cao vị thế và chia sẻ những bài học thực chiến giá trị.'}&quot;
               </p>
             </MotionDiv>
 
@@ -159,18 +198,30 @@ export default function Home() {
               className="bg-white p-8 rounded-3xl border border-[#D4AF37]/15 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center relative overflow-hidden"
             >
               <div className="absolute top-4 right-6 text-6xl text-[#D4AF37]/10 font-serif pointer-events-none select-none">“</div>
-              <div className="w-24 h-24 rounded-full bg-[#D4AF37]/10 border-2 border-[#D4AF37]/20 flex items-center justify-center text-[#B8860B] font-black text-2xl shadow-inner mb-6 flex-shrink-0">
-                TVB
+              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#D4AF37]/20 shadow-inner mb-6 flex-shrink-0 bg-[#D4AF37]/10 flex items-center justify-center">
+                {systemSettings.founder3_image ? (
+                  <img
+                    src={systemSettings.founder3_image}
+                    alt={systemSettings.founder3_name || "Anh Trần Văn B"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[#B8860B] font-black text-2xl">
+                    {getInitials(systemSettings.founder3_name || 'Trần Văn B')}
+                  </span>
+                )}
               </div>
-              <h4 className="text-lg font-black text-gray-900 mb-1">Trần Văn B</h4>
+              <h4 className="text-lg font-black text-gray-900 mb-1">
+                {systemSettings.founder3_name || 'Trần Văn B'}
+              </h4>
               <span className="text-[11px] font-bold text-[#B8860B] uppercase tracking-wider block">
-                Co-Founder
+                {systemSettings.founder3_role || 'Co-Founder'}
               </span>
               <span className="text-[10px] font-semibold text-gray-400 block mb-4">
-                .......................
+                Đại diện ban điều hành
               </span>
               <p className="text-xs font-semibold text-gray-600 leading-relaxed italic mt-2">
-                &quot;Kiến tạo một hệ sinh thái kết nối nhân tài minh bạch, uy tín và hiệu quả là mục tiêu hàng đầu của chúng tôi. Tại đây, mỗi Headhunter đều tìm thấy những đối tác chiến lược tin cậy, thúc đẩy doanh số và khẳng định năng lực cá nhân.&quot;
+                &quot;{systemSettings.founder3_quote || 'Kiến tạo một hệ sinh thái kết nối nhân tài minh bạch, uy tín và hiệu quả là mục tiêu hàng đầu của chúng tôi. Tại đây, mỗi Headhunter đều tìm thấy những đối tác chiến lược tin cậy, thúc đẩy doanh số và khẳng định năng lực cá nhân.'}&quot;
               </p>
             </MotionDiv>
           </div>
