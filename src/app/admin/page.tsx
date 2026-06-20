@@ -4,21 +4,35 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Users, Briefcase, Check, X, Edit, Trash2, Camera, Upload, 
-  Settings, LayoutDashboard, Home, ArrowLeft, Plus
+  Settings, LayoutDashboard, Home, ArrowLeft, Plus, PlusCircle, CheckCircle
 } from 'lucide-react';
-import { dbHelper, UserSession, Member, JobApplication, OrgMember, HonoredMember, SystemSettings } from '@/lib/supabase';
+import { dbHelper, UserSession, Member, JobApplication, OrgMember, HonoredMember, SystemSettings, CommunityActivity } from '@/lib/supabase';
 
 export default function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'join' | 'members' | 'applications' | 'content'>('join');
-  const [contentSubTab, setContentSubTab] = useState<'org' | 'honored' | 'homepage' | 'thuanhn'>('org');
+  const [contentSubTab, setContentSubTab] = useState<'org' | 'honored' | 'activity' | 'homepage' | 'thuanhn'>('org');
 
   const [members, setMembers] = useState<Member[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [orgMembers, setOrgMembers] = useState<OrgMember[]>([]);
   const [honoredMembers, setHonoredMembers] = useState<HonoredMember[]>([]);
   const [settingsForm, setSettingsForm] = useState<SystemSettings>({});
+
+  // Activities CMS state
+  const [activities, setActivities] = useState<CommunityActivity[]>([]);
+  const [isAdminPostSuccess, setIsAdminPostSuccess] = useState(false);
+  const [newActivity, setNewActivity] = useState({
+    title: '',
+    category: 'Workshop' as 'Workshop' | 'Networking' | 'Seminar' | 'Sự kiện',
+    description: '',
+    date: '',
+    attendees: 50,
+    imageType: 'books' as 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee',
+    images: [] as string[],
+    showOnHomepage: false
+  });
 
   // Org member form state
   const [orgForm, setOrgForm] = useState({
@@ -59,6 +73,9 @@ export default function AdminDashboard() {
 
     const settingsData = await dbHelper.getSystemSettings();
     setSettingsForm(settingsData);
+
+    const activitiesData = await dbHelper.getActivities();
+    setActivities(activitiesData);
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, callback: (base64: string) => void) => {
@@ -202,6 +219,47 @@ export default function AdminDashboard() {
       const updated = await dbHelper.getMembers();
       setMembers(updated);
       alert('Đã xóa hồ sơ đăng ký.');
+    }
+  };
+
+  const handleAdminPostActivity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      title: newActivity.title,
+      category: newActivity.category,
+      description: newActivity.description,
+      date: newActivity.date || new Date().toLocaleDateString('vi-VN'),
+      attendees: Number(newActivity.attendees) || 0,
+      imageType: newActivity.imageType,
+      images: newActivity.images,
+      showOnHomepage: newActivity.showOnHomepage
+    };
+
+    const added = await dbHelper.addActivity(payload);
+    setActivities([added, ...activities]);
+    setIsAdminPostSuccess(true);
+    
+    setNewActivity({
+      title: '',
+      category: 'Workshop',
+      description: '',
+      date: '',
+      attendees: 50,
+      imageType: 'books',
+      images: [],
+      showOnHomepage: false
+    });
+
+    setTimeout(() => {
+      setIsAdminPostSuccess(false);
+    }, 3000);
+  };
+
+  const handleDeleteActivity = async (id: string) => {
+    if (confirm('Bạn có chắc chắn muốn xóa bài viết/hoạt động này?')) {
+      await dbHelper.deleteActivity(id);
+      setActivities(prev => prev.filter(a => a.id !== id));
+      alert('Đã xóa bài viết/hoạt động.');
     }
   };
 
@@ -537,13 +595,14 @@ export default function AdminDashboard() {
               {[
                 { id: 'org', label: 'Sơ đồ tổ chức' },
                 { id: 'honored', label: 'Vinh danh thành viên' },
+                { id: 'activity', label: 'Bài viết & Hoạt động' },
                 { id: 'homepage', label: 'Cấu hình Trang chủ' },
                 { id: 'thuanhn', label: 'Cấu hình CEO Hằng Nghĩa Thuận' }
               ].map((sub) => (
                 <button
                   key={sub.id}
                   type="button"
-                  onClick={() => setContentSubTab(sub.id as 'org' | 'honored' | 'homepage' | 'thuanhn')}
+                  onClick={() => setContentSubTab(sub.id as 'org' | 'honored' | 'activity' | 'homepage' | 'thuanhn')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors ${
                     contentSubTab === sub.id
                       ? 'bg-[#D4AF37] text-white font-black shadow-sm'
@@ -799,6 +858,221 @@ export default function AdminDashboard() {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* CMS Sub-tab: Bài viết & Hoạt động */}
+            {contentSubTab === 'activity' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Form to create activity */}
+                <div className="lg:col-span-1 bg-[#FDFBF7] p-6 rounded-2xl border border-[#D4AF37]/15 shadow-sm">
+                  <h4 className="text-xs font-black text-gray-900 mb-4 uppercase tracking-wider flex items-center space-x-2">
+                    <PlusCircle className="text-[#D4AF37]" size={16} />
+                    <span>Tạo bài viết / Hoạt động mới</span>
+                  </h4>
+
+                  {isAdminPostSuccess ? (
+                    <div className="p-4 rounded-xl bg-white border border-[#D4AF37]/30 text-[#B8860B] text-center flex items-center justify-center space-x-2 font-bold text-xs">
+                      <CheckCircle size={14} />
+                      <span>Đã đăng tải thành công!</span>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleAdminPostActivity} className="space-y-4">
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Tiêu đề bài viết *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ví dụ: Workshop: Định hình năng lực..."
+                          value={newActivity.title}
+                          onChange={(e) => setNewActivity({ ...newActivity, title: e.target.value })}
+                          className="px-3 py-2 rounded-xl border border-gray-250 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                        />
+                      </div>
+
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Chuyên mục *</label>
+                        <select
+                          value={newActivity.category}
+                          onChange={(e) => setNewActivity({ ...newActivity, category: e.target.value as 'Workshop' | 'Networking' | 'Seminar' | 'Sự kiện' })}
+                          className="px-3 py-2 rounded-xl border border-gray-250 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                        >
+                          <option value="Workshop">Workshop</option>
+                          <option value="Networking">Networking</option>
+                          <option value="Seminar">Seminar</option>
+                          <option value="Sự kiện">Sự kiện</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Ngày diễn ra / Đăng bài</label>
+                        <input
+                          type="text"
+                          placeholder="Để trống lấy ngày hôm nay"
+                          value={newActivity.date}
+                          onChange={(e) => setNewActivity({ ...newActivity, date: e.target.value })}
+                          className="px-3 py-2 rounded-xl border border-gray-250 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                        />
+                      </div>
+
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Số lượng người tham gia dự kiến</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={newActivity.attendees}
+                          onChange={(e) => setNewActivity({ ...newActivity, attendees: Number(e.target.value) })}
+                          className="px-3 py-2 rounded-xl border border-gray-250 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                        />
+                      </div>
+
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Hình ảnh (Tối đa 3 hình)</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (newActivity.images.length + files.length > 3) {
+                              alert('Chỉ được chọn tối đa 3 hình ảnh!');
+                              return;
+                            }
+                            files.forEach(file => {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                if (typeof reader.result === 'string') {
+                                  setNewActivity(prev => ({
+                                    ...prev,
+                                    images: [...prev.images, reader.result as string]
+                                  }));
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            });
+                          }}
+                          disabled={newActivity.images.length >= 3}
+                          className="w-full text-xs text-gray-500 bg-white border border-gray-250 py-1.5 px-2 rounded-xl focus:border-[#D4AF37] focus:outline-none"
+                        />
+                        {newActivity.images.length > 0 && (
+                          <div className="flex gap-1.5 mt-2 flex-wrap">
+                            {newActivity.images.map((img, idx) => (
+                              <div key={idx} className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 shadow-sm">
+                                <img src={img} className="w-full h-full object-cover" alt="Preview" />
+                                <button
+                                  type="button"
+                                  onClick={() => setNewActivity(prev => ({
+                                    ...prev,
+                                    images: prev.images.filter((_, i) => i !== idx)
+                                  }))}
+                                  className="absolute top-0 right-0 bg-red-600 text-white p-0.5 rounded-bl hover:bg-red-700 transition-colors"
+                                >
+                                  <X size={8} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Nội dung chi tiết bài viết *</label>
+                        <textarea
+                          required
+                          rows={4}
+                          placeholder="Nhập nội dung chia sẻ chi tiết..."
+                          value={newActivity.description}
+                          onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
+                          className="px-3 py-2 rounded-xl border border-gray-255 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white resize-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-2 py-1">
+                        <input
+                          type="checkbox"
+                          id="showOnHomepage"
+                          checked={newActivity.showOnHomepage}
+                          onChange={(e) => setNewActivity({ ...newActivity, showOnHomepage: e.target.checked })}
+                          className="w-4 h-4 rounded text-[#D4AF37] border-gray-300 focus:ring-[#D4AF37] cursor-pointer"
+                        />
+                        <label htmlFor="showOnHomepage" className="text-[10px] font-bold text-gray-700 cursor-pointer select-none">
+                          Hiển thị nổi bật trên Trang Chủ
+                        </label>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full py-3 rounded-xl text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-md hover:shadow-lg transition-all"
+                      >
+                        Đăng tải hoạt động
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {/* List of current activities */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                    <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider mb-4">Các hoạt động hiện tại ({activities.length})</h4>
+                    {activities.length === 0 ? (
+                      <div className="text-center py-12 text-gray-400 font-semibold italic text-xs">
+                        Chưa có hoạt động nào được đăng tải.
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-black uppercase text-gray-500 tracking-wider">
+                              <th className="p-3">Hoạt động & Chuyên mục</th>
+                              <th className="p-3">Ngày đăng & Quy mô</th>
+                              <th className="p-3 text-center">Nổi bật</th>
+                              <th className="p-3 text-center">Thao tác</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-xs font-semibold text-gray-700 divide-y divide-gray-50">
+                            {activities.map((act) => (
+                              <tr key={act.id} className="hover:bg-gray-50/40 transition-colors">
+                                <td className="p-3">
+                                  <span className="font-black text-gray-900 block line-clamp-1">{act.title}</span>
+                                  <span className="inline-block bg-[#D4AF37]/10 text-[#B8860B] text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full mt-1">
+                                    {act.category}
+                                  </span>
+                                </td>
+                                <td className="p-3">
+                                  <span className="block text-gray-800">{act.date}</span>
+                                  <span className="text-[10px] text-gray-400 block mt-0.5">{act.attendees} người dự kiến</span>
+                                </td>
+                                <td className="p-3 text-center">
+                                  {act.showOnHomepage ? (
+                                    <span className="inline-block bg-green-50 text-green-700 text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                                      Có
+                                    </span>
+                                  ) : (
+                                    <span className="inline-block bg-gray-100 text-gray-400 text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                                      Không
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="p-3">
+                                  <div className="flex items-center justify-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteActivity(act.id)}
+                                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all"
+                                      title="Xóa bài viết này"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react';
 import { 
   Users, 
-  CheckCircle, 
   Send,
   Heart,
   MessageSquare,
   Calendar,
-  PlusCircle,
   X
 } from 'lucide-react';
 import { dbHelper, UserSession, CommunityActivity } from '@/lib/supabase';
@@ -84,18 +82,7 @@ export default function HoatDong() {
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
-  // Admin states
-  const [isAdminPostSuccess, setIsAdminPostSuccess] = useState(false);
-  const [newActivity, setNewActivity] = useState({
-    title: '',
-    category: 'Workshop' as 'Workshop' | 'Networking' | 'Seminar' | 'Sự kiện',
-    description: '',
-    date: '',
-    attendees: 50,
-    imageType: 'books' as 'books' | 'handshake' | 'briefcase' | 'target' | 'party' | 'coffee',
-    images: [] as string[],
-    showOnHomepage: false
-  });
+
 
   useEffect(() => {
     setCurrentUser(dbHelper.getCurrentUser());
@@ -159,40 +146,7 @@ export default function HoatDong() {
     }));
   };
 
-  const handleAdminPostActivity = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (currentUser?.role !== 'admin') return;
 
-    const payload = {
-      title: newActivity.title,
-      category: newActivity.category,
-      description: newActivity.description,
-      date: newActivity.date || new Date().toLocaleDateString('vi-VN'),
-      attendees: Number(newActivity.attendees) || 0,
-      imageType: newActivity.imageType,
-      images: newActivity.images,
-      showOnHomepage: newActivity.showOnHomepage
-    };
-
-    const added = await dbHelper.addActivity(payload);
-    setActivitiesList([added, ...activitiesList]);
-    setIsAdminPostSuccess(true);
-    
-    setNewActivity({
-      title: '',
-      category: 'Workshop',
-      description: '',
-      date: '',
-      attendees: 50,
-      imageType: 'books',
-      images: [],
-      showOnHomepage: false
-    });
-
-    setTimeout(() => {
-      setIsAdminPostSuccess(false);
-    }, 3000);
-  };
 
   const filteredActivities = activitiesList.filter(act => {
     if (selectedCategory === 'Tất cả') return true;
@@ -219,155 +173,7 @@ export default function HoatDong() {
 
       {/* Main activities block */}
       <section className="py-12 bg-white max-w-7xl mx-auto px-6">
-        {/* Admin Create Activity Panel */}
-        {currentUser?.role === 'admin' && (
-          <div className="mb-10 p-6 rounded-3xl bg-[#FDFBF7] border border-[#D4AF37]/20 shadow-md">
-            <h3 className="text-sm font-black text-gray-900 flex items-center space-x-2 border-b border-[#D4AF37]/15 pb-3 mb-5 uppercase tracking-wider">
-              <PlusCircle className="text-[#D4AF37]" size={18} />
-              <span>Tạo bài viết / Hoạt động mới (Dành cho Ban Quản Trị)</span>
-            </h3>
 
-            {isAdminPostSuccess ? (
-              <div className="p-4 rounded-xl bg-[#FDFBF7] border border-[#D4AF37]/30 text-[#B8860B] text-center flex items-center justify-center space-x-2 font-bold text-sm">
-                <CheckCircle size={16} />
-                <span>Bài viết đã được đăng tải thành công lên cộng đồng!</span>
-              </div>
-            ) : (
-              <form onSubmit={handleAdminPostActivity} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Tên hoạt động / Tiêu đề bài đăng *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ví dụ: Workshop: Định hình năng lực Recruiter thế hệ mới"
-                      value={newActivity.title}
-                      onChange={(e) => setNewActivity({ ...newActivity, title: e.target.value })}
-                      className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Phân loại chuyên mục *</label>
-                    <select
-                      value={newActivity.category}
-                      onChange={(e) => setNewActivity({ ...newActivity, category: e.target.value as 'Workshop' | 'Networking' | 'Seminar' | 'Sự kiện' })}
-                      className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                    >
-                      <option value="Workshop">Workshop</option>
-                      <option value="Networking">Networking</option>
-                      <option value="Seminar">Seminar</option>
-                      <option value="Sự kiện">Sự kiện</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Ngày diễn ra / Đăng bài</label>
-                    <input
-                      type="text"
-                      placeholder="Để trống lấy ngày hôm nay"
-                      value={newActivity.date}
-                      onChange={(e) => setNewActivity({ ...newActivity, date: e.target.value })}
-                      className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Số lượng người tham gia dự kiến</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={newActivity.attendees}
-                      onChange={(e) => setNewActivity({ ...newActivity, attendees: Number(e.target.value) })}
-                      className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Hình ảnh bài viết (Tối đa 3 hình)</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        if (newActivity.images.length + files.length > 3) {
-                          alert('Chỉ được chọn tối đa 3 hình ảnh!');
-                          return;
-                        }
-                        
-                        files.forEach(file => {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            if (typeof reader.result === 'string') {
-                              setNewActivity(prev => ({
-                                ...prev,
-                                images: [...prev.images, reader.result as string]
-                              }));
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        });
-                      }}
-                      disabled={newActivity.images.length >= 3}
-                      className="w-full text-xs text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-[#D4AF37]/10 file:text-[#B8860B] hover:file:bg-[#D4AF37]/20 transition-all cursor-pointer bg-white border border-gray-300 py-1.5 px-2 rounded-xl focus:border-[#D4AF37] focus:outline-none"
-                    />
-                    {newActivity.images.length > 0 && (
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        {newActivity.images.map((img, idx) => (
-                          <div key={idx} className="relative w-12 h-12 rounded-lg overflow-hidden border border-[#D4AF37]/20 bg-gray-50 shadow-sm">
-                            <img src={img} className="w-full h-full object-cover" alt="Preview" />
-                            <button
-                              type="button"
-                              onClick={() => setNewActivity(prev => ({
-                                ...prev,
-                                images: prev.images.filter((_, i) => i !== idx)
-                              }))}
-                              className="absolute top-0 right-0 bg-red-600 text-white p-0.5 rounded-bl hover:bg-red-700 transition-colors"
-                            >
-                              <X size={8} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-col space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Nội dung chi tiết bài viết *</label>
-                  <textarea
-                    required
-                    rows={3}
-                    placeholder="Nhập nội dung chia sẻ chi tiết cho cộng đồng..."
-                    value={newActivity.description}
-                    onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
-                    className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white resize-none"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2 py-1">
-                  <input
-                    type="checkbox"
-                    id="showOnHomepage"
-                    checked={newActivity.showOnHomepage}
-                    onChange={(e) => setNewActivity({ ...newActivity, showOnHomepage: e.target.checked })}
-                    className="w-4 h-4 rounded text-[#D4AF37] border-gray-300 focus:ring-[#D4AF37] cursor-pointer"
-                  />
-                  <label htmlFor="showOnHomepage" className="text-xs font-bold text-gray-700 cursor-pointer select-none">
-                    Hiển thị bài viết này ở mục Hoạt động nổi bật trên Trang Chủ
-                  </label>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-md"
-                >
-                  Đăng tải hoạt động lên cộng đồng
-                </button>
-              </form>
-            )}
-          </div>
-        )}
 
         {/* Category filters (Tags) */}
         <div className="flex flex-wrap gap-2.5 mb-10">

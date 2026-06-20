@@ -249,13 +249,14 @@ export const dbHelper = {
   // --- JOBS API ---
   async getJobs(): Promise<Job[]> {
     if (typeof window !== 'undefined') {
-      if (!localStorage.getItem('sntn_cleared_mock_data_v8')) {
+      if (!localStorage.getItem('sntn_cleared_mock_data_v9')) {
         localStorage.removeItem('sntn_jobs');
         localStorage.removeItem('sntn_activities');
         localStorage.removeItem('sntn_org_members');
         localStorage.removeItem('sntn_honored_members');
         localStorage.removeItem('sntn_system_settings');
-        localStorage.setItem('sntn_cleared_mock_data_v8', 'true');
+        localStorage.removeItem('sntn_members');
+        localStorage.setItem('sntn_cleared_mock_data_v9', 'true');
       }
       const local = localStorage.getItem('sntn_jobs');
       if (local) {
@@ -278,7 +279,7 @@ export const dbHelper = {
     };
 
     if (typeof window !== 'undefined') {
-      const currentJobs = await this.getJobs();
+      const currentJobs = await dbHelper.getJobs();
       const updatedJobs = [newJob, ...currentJobs];
       localStorage.setItem('sntn_jobs', JSON.stringify(updatedJobs));
     }
@@ -287,7 +288,7 @@ export const dbHelper = {
 
   async approveJob(jobId: string): Promise<boolean> {
     if (typeof window === 'undefined') return false;
-    const currentJobs = await this.getJobs();
+    const currentJobs = await dbHelper.getJobs();
     const idx = currentJobs.findIndex(j => j.id === jobId);
     if (idx !== -1) {
       currentJobs[idx].approved = true;
@@ -299,7 +300,7 @@ export const dbHelper = {
 
   async editJob(jobId: string, updatedData: Partial<Omit<Job, 'id' | 'created_at' | 'posted_by'>>): Promise<boolean> {
     if (typeof window === 'undefined') return false;
-    const currentJobs = await this.getJobs();
+    const currentJobs = await dbHelper.getJobs();
     const idx = currentJobs.findIndex(j => j.id === jobId);
     if (idx !== -1) {
       currentJobs[idx] = {
@@ -314,7 +315,7 @@ export const dbHelper = {
 
   async deleteJob(jobId: string): Promise<boolean> {
     if (typeof window === 'undefined') return false;
-    const currentJobs = await this.getJobs();
+    const currentJobs = await dbHelper.getJobs();
     const updated = currentJobs.filter(j => j.id !== jobId);
     localStorage.setItem('sntn_jobs', JSON.stringify(updated));
     return true;
@@ -334,7 +335,7 @@ export const dbHelper = {
       created_at: new Date().toISOString()
     };
     if (typeof window !== 'undefined') {
-      const apps = await this.getApplications();
+      const apps = await dbHelper.getApplications();
       const updated = [newApp, ...apps];
       localStorage.setItem('sntn_applications', JSON.stringify(updated));
     }
@@ -345,7 +346,50 @@ export const dbHelper = {
   async getMembers(): Promise<Member[]> {
     if (typeof window === 'undefined') return [];
     const local = localStorage.getItem('sntn_members');
-    return local ? JSON.parse(local) : [];
+    if (local) {
+      return JSON.parse(local);
+    } else {
+      const defaults: Member[] = [
+        {
+          id: 'member-mock-1',
+          fullName: 'Nguyễn Văn An',
+          email: 'an.nguyen@fpt.com',
+          phone: '0912345678',
+          company: 'FPT Software',
+          title: 'Chuyên viên Tuyển dụng (TA Specialist)',
+          linkedin: 'https://linkedin.com/in/annguyen',
+          experience: 3,
+          status: 'pending',
+          created_at: new Date(Date.now() - 3600000 * 24).toISOString() // 1 day ago
+        },
+        {
+          id: 'member-mock-2',
+          fullName: 'Trần Thị Bình',
+          email: 'binh.tran@vingroup.com',
+          phone: '0987654321',
+          company: 'Vingroup',
+          title: 'Trưởng Phòng Nhân Sự (HR Manager)',
+          linkedin: 'https://linkedin.com/in/binhtran',
+          experience: 8,
+          status: 'pending',
+          created_at: new Date().toISOString() // just now
+        },
+        {
+          id: 'member-mock-3',
+          fullName: 'Lê Văn Cường',
+          email: 'cuong.le@tiki.vn',
+          phone: '0901234567',
+          company: 'Tiki',
+          title: 'Chuyên viên Tuyển dụng Cấp cao',
+          linkedin: 'https://linkedin.com/in/cuongle',
+          experience: 2,
+          status: 'approved',
+          created_at: new Date(Date.now() - 3600000 * 24 * 5).toISOString() // 5 days ago
+        }
+      ];
+      localStorage.setItem('sntn_members', JSON.stringify(defaults));
+      return defaults;
+    }
   },
 
   async registerMember(member: Omit<Member, 'id' | 'created_at' | 'status'>): Promise<Member> {
@@ -357,7 +401,7 @@ export const dbHelper = {
     };
 
     if (typeof window !== 'undefined') {
-      const members = await this.getMembers();
+      const members = await dbHelper.getMembers();
       members.push(newMember);
       localStorage.setItem('sntn_members', JSON.stringify(members));
     }
@@ -366,7 +410,7 @@ export const dbHelper = {
 
   async approveMember(memberId: string): Promise<boolean> {
     if (typeof window === 'undefined') return false;
-    const members = await this.getMembers();
+    const members = await dbHelper.getMembers();
     const idx = members.findIndex(m => m.id === memberId);
     if (idx !== -1) {
       members[idx].status = 'approved';
@@ -378,7 +422,7 @@ export const dbHelper = {
 
   async rejectMember(memberId: string): Promise<boolean> {
     if (typeof window === 'undefined') return false;
-    const members = await this.getMembers();
+    const members = await dbHelper.getMembers();
     const idx = members.findIndex(m => m.id === memberId);
     if (idx !== -1) {
       members[idx].status = 'rejected';
@@ -389,7 +433,7 @@ export const dbHelper = {
   },
   async saveMember(member: Member): Promise<void> {
     if (typeof window === 'undefined') return;
-    const members = await this.getMembers();
+    const members = await dbHelper.getMembers();
     const idx = members.findIndex(m => m.id === member.id);
     if (idx !== -1) {
       members[idx] = member;
@@ -400,7 +444,7 @@ export const dbHelper = {
   },
   async deleteMember(id: string): Promise<void> {
     if (typeof window === 'undefined') return;
-    const members = await this.getMembers();
+    const members = await dbHelper.getMembers();
     const filtered = members.filter(m => m.id !== id);
     localStorage.setItem('sntn_members', JSON.stringify(filtered));
   },
@@ -445,7 +489,7 @@ export const dbHelper = {
       created_at: new Date().toISOString()
     };
     if (typeof window !== 'undefined') {
-      const activities = await this.getActivities();
+      const activities = await dbHelper.getActivities();
       const updated = [newAct, ...activities];
       localStorage.setItem('sntn_activities', JSON.stringify(updated));
     }
@@ -454,7 +498,7 @@ export const dbHelper = {
 
   async toggleLikeActivity(activityId: string, userEmail: string): Promise<string[]> {
     if (typeof window === 'undefined') return [];
-    const activities = await this.getActivities();
+    const activities = await dbHelper.getActivities();
     const idx = activities.findIndex(a => a.id === activityId);
     if (idx !== -1) {
       const likes = activities[idx].likes || [];
@@ -478,7 +522,7 @@ export const dbHelper = {
       created_at: new Date().toISOString()
     };
     if (typeof window !== 'undefined') {
-      const activities = await this.getActivities();
+      const activities = await dbHelper.getActivities();
       const idx = activities.findIndex(a => a.id === activityId);
       if (idx !== -1) {
         activities[idx].comments = [...(activities[idx].comments || []), newComment];
@@ -486,6 +530,13 @@ export const dbHelper = {
       }
     }
     return newComment;
+  },
+  async deleteActivity(id: string): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+    const activities = await dbHelper.getActivities();
+    const filtered = activities.filter(a => a.id !== id);
+    localStorage.setItem('sntn_activities', JSON.stringify(filtered));
+    return true;
   },
 
   // --- ORG MEMBERS API ---
@@ -561,7 +612,7 @@ export const dbHelper = {
   },
   async saveOrgMember(member: OrgMember): Promise<void> {
     if (typeof window === 'undefined') return;
-    const members = await this.getOrgMembers();
+    const members = await dbHelper.getOrgMembers();
     const idx = members.findIndex(m => m.id === member.id);
     if (idx !== -1) {
       members[idx] = member;
@@ -572,7 +623,7 @@ export const dbHelper = {
   },
   async deleteOrgMember(id: string): Promise<void> {
     if (typeof window === 'undefined') return;
-    const members = await this.getOrgMembers();
+    const members = await dbHelper.getOrgMembers();
     const filtered = members.filter(m => m.id !== id);
     localStorage.setItem('sntn_org_members', JSON.stringify(filtered));
   },
@@ -591,7 +642,7 @@ export const dbHelper = {
   },
   async saveHonoredMember(member: HonoredMember): Promise<void> {
     if (typeof window === 'undefined') return;
-    const members = await this.getHonoredMembers();
+    const members = await dbHelper.getHonoredMembers();
     const idx = members.findIndex(m => m.id === member.id);
     if (idx !== -1) {
       members[idx] = member;
@@ -602,7 +653,7 @@ export const dbHelper = {
   },
   async deleteHonoredMember(id: string): Promise<void> {
     if (typeof window === 'undefined') return;
-    const members = await this.getHonoredMembers();
+    const members = await dbHelper.getHonoredMembers();
     const filtered = members.filter(m => m.id !== id);
     localStorage.setItem('sntn_honored_members', JSON.stringify(filtered));
   },
