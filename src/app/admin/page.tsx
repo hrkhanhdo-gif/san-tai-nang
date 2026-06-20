@@ -331,7 +331,7 @@ export default function AdminDashboard() {
       {/* Tabs Control */}
       <div className="bg-white border-b border-gray-100 flex space-x-6 justify-center md:justify-start px-6 max-w-7xl mx-auto flex-wrap">
         {[
-          { id: 'join', label: 'Hồ sơ gia nhập', icon: Users },
+          { id: 'join', label: 'Đơn đăng ký mới', icon: Users },
           { id: 'members', label: 'Thành viên cộng đồng', icon: Users },
           { id: 'applications', label: 'Đơn tuyển dụng', icon: Briefcase },
           { id: 'content', label: 'Quản lý nội dung (CMS)', icon: Settings }
@@ -361,7 +361,7 @@ export default function AdminDashboard() {
           <section className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
             <div className="border-b border-[#D4AF37]/10 pb-4 mb-6">
               <h3 className="text-base font-black text-gray-900 flex items-center space-x-2 uppercase tracking-wide">
-                <span>Hồ sơ đăng ký gia nhập (Chờ duyệt)</span>
+                <span>Đơn đăng ký thành viên mới (Chờ duyệt)</span>
               </h3>
               <p className="text-[11px] text-gray-400 font-semibold mt-0.5">
                 Phê duyệt hồ sơ đăng ký và cấp tài khoản ban đầu cho thành viên cộng đồng mới.

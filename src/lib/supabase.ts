@@ -10,6 +10,19 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+// Clean up mock data and reseed if version mismatch
+if (typeof window !== 'undefined') {
+  if (!localStorage.getItem('sntn_cleared_mock_data_v10')) {
+    localStorage.removeItem('sntn_jobs');
+    localStorage.removeItem('sntn_activities');
+    localStorage.removeItem('sntn_org_members');
+    localStorage.removeItem('sntn_honored_members');
+    localStorage.removeItem('sntn_system_settings');
+    localStorage.removeItem('sntn_members');
+    localStorage.setItem('sntn_cleared_mock_data_v10', 'true');
+  }
+}
+
 // Mock database structures and APIs
 export interface UserSession {
   email: string;
@@ -249,15 +262,6 @@ export const dbHelper = {
   // --- JOBS API ---
   async getJobs(): Promise<Job[]> {
     if (typeof window !== 'undefined') {
-      if (!localStorage.getItem('sntn_cleared_mock_data_v9')) {
-        localStorage.removeItem('sntn_jobs');
-        localStorage.removeItem('sntn_activities');
-        localStorage.removeItem('sntn_org_members');
-        localStorage.removeItem('sntn_honored_members');
-        localStorage.removeItem('sntn_system_settings');
-        localStorage.removeItem('sntn_members');
-        localStorage.setItem('sntn_cleared_mock_data_v9', 'true');
-      }
       const local = localStorage.getItem('sntn_jobs');
       if (local) {
         return JSON.parse(local);
