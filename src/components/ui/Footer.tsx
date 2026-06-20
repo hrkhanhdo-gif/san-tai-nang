@@ -67,7 +67,7 @@ export default function Footer() {
               { name: 'Về Thuận HN', href: '/ve-thuan-hn' },
               { name: 'Hoạt động', href: '/hoat-dong' },
               { name: 'Việc làm', href: '/viec-lam' },
-              { name: 'Cộng đồng', href: '/cong-dong' },
+              { name: 'Thành viên', href: '/thanh-vien' },
               { name: 'Liên hệ', href: '/lien-he' },
             ].map((link) => (
               <li key={link.href}>

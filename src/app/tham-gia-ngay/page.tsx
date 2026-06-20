@@ -72,7 +72,7 @@ export default function JoinNow() {
 
     setTimeout(() => {
       setIsSuccess(false);
-      window.location.href = '/cong-dong';
+      window.location.href = '/thanh-vien';
     }, 2000);
   };
 

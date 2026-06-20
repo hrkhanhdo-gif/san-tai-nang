@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, LogIn, LogOut } from 'lucide-react';
+import { Menu, X, LogIn, LogOut, Settings } from 'lucide-react';
 import { MotionDiv } from '../motion';
 import { dbHelper, UserSession } from '@/lib/supabase';
 
@@ -47,14 +47,18 @@ export default function Header() {
     window.location.href = '/';
   };
 
-  const navLinks = [
+  const baseLinks = [
     { name: 'Trang chủ', href: '/' },
     { name: 'Về Thuận HN', href: '/ve-thuan-hn' },
     { name: 'Hoạt động', href: '/hoat-dong' },
     { name: 'Việc làm', href: '/viec-lam' },
-    { name: 'Cộng đồng', href: '/cong-dong' },
+    { name: 'Thành viên', href: '/thanh-vien' },
     { name: 'Liên hệ', href: '/lien-he' },
   ];
+
+  const navLinks = user?.role === 'admin'
+    ? [...baseLinks, { name: 'Trang quản trị', href: '/admin' }]
+    : baseLinks;
 
   return (
     <header
@@ -107,6 +111,15 @@ export default function Header() {
                   {user.role === 'admin' ? 'Ban Quản Trị' : 'Partner (Đối Tác)'}
                 </span>
               </div>
+              {user.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="p-2 rounded-xl bg-gray-100 hover:bg-[#D4AF37]/10 hover:text-[#B8860B] transition-colors text-gray-500"
+                  title="Vào Trang quản trị (CMS)"
+                >
+                  <Settings size={14} />
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="p-2 rounded-xl bg-gray-100 hover:bg-red-50 hover:text-red-600 transition-colors text-gray-500"

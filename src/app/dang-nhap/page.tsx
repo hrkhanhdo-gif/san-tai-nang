@@ -62,7 +62,7 @@ export default function Login() {
       setIsSuccess(true);
       window.dispatchEvent(new Event('sntn_login_change'));
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = user.role === 'admin' ? '/admin' : '/';
       }, 1500);
     }
   };
@@ -74,7 +74,7 @@ export default function Login() {
       setIsSuccess(true);
       window.dispatchEvent(new Event('sntn_login_change'));
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = user.role === 'admin' ? '/admin' : '/';
       }, 1500);
     }
   };

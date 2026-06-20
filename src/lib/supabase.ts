@@ -108,7 +108,7 @@ export interface OrgMember {
   role: string;
   company: string;
   image: string; // Base64 or URL
-  roleType: 'founder' | 'secretary' | 'member';
+  roleType: 'founder' | 'admin' | 'leader' | 'member';
   created_at: string;
 }
 
@@ -247,13 +247,13 @@ export const dbHelper = {
   // --- JOBS API ---
   async getJobs(): Promise<Job[]> {
     if (typeof window !== 'undefined') {
-      if (!localStorage.getItem('sntn_cleared_mock_data_v6')) {
+      if (!localStorage.getItem('sntn_cleared_mock_data_v7')) {
         localStorage.removeItem('sntn_jobs');
         localStorage.removeItem('sntn_activities');
         localStorage.removeItem('sntn_org_members');
         localStorage.removeItem('sntn_honored_members');
         localStorage.removeItem('sntn_system_settings');
-        localStorage.setItem('sntn_cleared_mock_data_v6', 'true');
+        localStorage.setItem('sntn_cleared_mock_data_v7', 'true');
       }
       const local = localStorage.getItem('sntn_jobs');
       if (local) {
@@ -385,6 +385,23 @@ export const dbHelper = {
     }
     return false;
   },
+  async saveMember(member: Member): Promise<void> {
+    if (typeof window === 'undefined') return;
+    const members = await this.getMembers();
+    const idx = members.findIndex(m => m.id === member.id);
+    if (idx !== -1) {
+      members[idx] = member;
+    } else {
+      members.push(member);
+    }
+    localStorage.setItem('sntn_members', JSON.stringify(members));
+  },
+  async deleteMember(id: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    const members = await this.getMembers();
+    const filtered = members.filter(m => m.id !== id);
+    localStorage.setItem('sntn_members', JSON.stringify(filtered));
+  },
 
   // --- CONTACT MESSAGES API ---
   async sendContactMessage(msg: Omit<ContactMessage, 'id' | 'created_at'>): Promise<ContactMessage> {
@@ -492,7 +509,7 @@ export const dbHelper = {
           role: 'Thư ký Ban điều hành & Quản trị viên',
           company: 'Săn Tài Năng',
           image: '/nguyen-thi-c.png',
-          roleType: 'secretary',
+          roleType: 'admin',
           created_at: new Date().toISOString()
         }
       ];
