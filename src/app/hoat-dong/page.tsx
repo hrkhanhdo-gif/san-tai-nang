@@ -153,6 +153,66 @@ export default function HoatDong() {
     return act.category === selectedCategory;
   });
 
+  if (selectedActivityDetail) {
+    return (
+      <div className="bg-white min-h-screen pb-20 pt-8">
+        <div className="max-w-4xl mx-auto px-6">
+          {/* Back Button */}
+          <button
+            onClick={() => setSelectedActivityDetail(null)}
+            className="flex items-center space-x-2 text-xs text-gray-500 hover:text-[#D4AF37] font-bold mb-8 transition-colors uppercase tracking-wider"
+          >
+            <span>← Quay lại danh sách</span>
+          </button>
+
+          <div className="space-y-8">
+            {/* Image Banner */}
+            <div className="w-full h-64 md:h-[450px] rounded-3xl bg-gray-50 border border-[#D4AF37]/15 overflow-hidden flex items-center justify-center text-6xl shadow-inner relative">
+              {selectedActivityDetail.images && selectedActivityDetail.images.length > 0 ? (
+                <ActivityImagesCarousel images={selectedActivityDetail.images} />
+              ) : (
+                emojiMap[selectedActivityDetail.imageType || 'books']
+              )}
+            </div>
+
+            {/* Content Wrapper */}
+            <div className="space-y-6">
+              {/* Tag & Meta Info */}
+              <div className="space-y-3">
+                <span className="inline-block text-xs font-black text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-3 py-1 rounded-full">
+                  {selectedActivityDetail.category}
+                </span>
+
+                <h1 className="text-2xl md:text-4xl font-black text-gray-900 leading-tight">
+                  {selectedActivityDetail.title}
+                </h1>
+
+                <div className="flex flex-wrap gap-4 text-xs font-bold text-gray-500 pt-2 border-t border-b border-gray-100 py-3">
+                  <span className="flex items-center space-x-1.5">
+                    <Calendar size={15} className="text-[#D4AF37]" />
+                    <span>Thời gian: {selectedActivityDetail.date}</span>
+                  </span>
+                  <span className="flex items-center space-x-1.5">
+                    <Users size={15} className="text-[#D4AF37]" />
+                    <span>Dự kiến: {selectedActivityDetail.attendees} người tham gia</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider text-[#B8860B]">Nội dung chi tiết</h4>
+                <div className="text-sm md:text-base text-gray-700 leading-relaxed font-semibold whitespace-pre-line bg-[#FDFBF7]/60 p-6 md:p-8 rounded-3xl border border-[#D4AF37]/10 shadow-sm">
+                  {selectedActivityDetail.description}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white min-h-screen">
       {/* Intro Header */}
@@ -335,79 +395,6 @@ export default function HoatDong() {
           </div>
         )}
       </section>
-
-      {/* Activity Detail Modal */}
-      {selectedActivityDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <MotionDiv
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-5xl bg-white rounded-3xl border border-[#D4AF37]/20 shadow-2xl p-6 md:p-8 relative overflow-hidden max-h-[90vh] flex flex-col"
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedActivityDetail(null)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 z-10 bg-white/80 p-1.5 rounded-full shadow-sm hover:scale-110 transition-all"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="overflow-y-auto pr-1 space-y-6">
-              {/* Image Banner */}
-              <div className="w-full max-w-3xl mx-auto h-64 md:h-[450px] rounded-2xl bg-gray-50 border border-[#D4AF37]/15 overflow-hidden flex items-center justify-center text-6xl shadow-inner relative flex-shrink-0">
-                {selectedActivityDetail.images && selectedActivityDetail.images.length > 0 ? (
-                  <ActivityImagesCarousel images={selectedActivityDetail.images} />
-                ) : (
-                  emojiMap[selectedActivityDetail.imageType || 'books']
-                )}
-              </div>
-
-              {/* Content Wrapper */}
-              <div className="w-full max-w-3xl mx-auto space-y-6">
-                {/* Tag & Meta Info */}
-                <div className="space-y-3">
-                  <span className="inline-block text-xs font-black text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-3 py-1 rounded-full">
-                    {selectedActivityDetail.category}
-                  </span>
-
-                  <h3 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">
-                    {selectedActivityDetail.title}
-                  </h3>
-
-                  <div className="flex flex-wrap gap-4 text-xs font-bold text-gray-500 pt-2 border-t border-b border-gray-100 py-3">
-                    <span className="flex items-center space-x-1.5">
-                      <Calendar size={15} className="text-[#D4AF37]" />
-                      <span>Thời gian: {selectedActivityDetail.date}</span>
-                    </span>
-                    <span className="flex items-center space-x-1.5">
-                      <Users size={15} className="text-[#D4AF37]" />
-                      <span>Dự kiến: {selectedActivityDetail.attendees} người tham gia</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider text-[#B8860B]">Nội dung chi tiết</h4>
-                  <div className="text-sm text-gray-700 leading-relaxed font-semibold whitespace-pre-line bg-[#FDFBF7]/60 p-5 md:p-6 rounded-2xl border border-[#D4AF37]/10 shadow-sm">
-                    {selectedActivityDetail.description}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer buttons */}
-            <div className="border-t border-gray-100 pt-4 mt-6 flex justify-end flex-shrink-0">
-              <button
-                onClick={() => setSelectedActivityDetail(null)}
-                className="px-6 py-2.5 rounded-xl bg-gray-950 text-white font-bold text-xs uppercase tracking-wider hover:bg-[#D4AF37] transition-colors"
-              >
-                Đóng
-              </button>
-            </div>
-          </MotionDiv>
-        </div>
-      )}
     </div>
   );
 }
