@@ -2,10 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Award, X, ChevronLeft, ChevronRight 
+  Award, X, ChevronLeft, ChevronRight, Send, CheckCircle 
 } from 'lucide-react';
 import { dbHelper, OrgMember, HonoredMember } from '@/lib/supabase';
 import { MotionDiv } from '@/components/motion';
+
+const LinkedinIcon = ({ size = 24, ...props }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect width="4" height="12" x="2" y="9" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
 
 export default function MembersPage() {
   const [orgMembers, setOrgMembers] = useState<OrgMember[]>([]);
@@ -13,6 +31,18 @@ export default function MembersPage() {
   
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Form registration state
+  const [form, setForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    company: '',
+    title: '',
+    linkedin: '',
+    experience: ''
+  });
+  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -52,6 +82,36 @@ export default function MembersPage() {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const expNum = parseInt(form.experience) || 0;
+    
+    await dbHelper.registerMember({
+      fullName: form.fullName,
+      email: form.email,
+      phone: form.phone,
+      company: form.company,
+      title: form.title,
+      linkedin: form.linkedin,
+      experience: expNum
+    });
+
+    setIsSuccess(true);
+    setForm({
+      fullName: '',
+      email: '',
+      phone: '',
+      company: '',
+      title: '',
+      linkedin: '',
+      experience: ''
+    });
+
+    setTimeout(() => {
+      setIsSuccess(false);
+    }, 4000);
   };
 
   const founders = orgMembers.filter(m => m.roleType === 'founder');
@@ -480,6 +540,139 @@ export default function MembersPage() {
               )}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Form Đăng ký thành viên mới */}
+      <section className="py-20 bg-white relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#FFC107]/5 blur-3xl pointer-events-none" />
+
+        <div className="max-w-3xl mx-auto px-6 relative z-10">
+          <div className="p-8 md:p-10 rounded-3xl bg-[#FDFBF7] border border-[#D4AF37]/25 shadow-xl bg-white/70 backdrop-blur-sm">
+            <div className="text-center mb-8">
+              <span className="inline-block text-[10px] font-extrabold text-[#B8860B] uppercase tracking-wider bg-[#D4AF37]/10 px-2.5 py-1 rounded-md mb-3">
+                Gia nhập Cộng đồng HR
+              </span>
+              <h2 className="text-2xl font-black text-gray-900 mb-1.5 uppercase tracking-wide">Đăng ký thành viên mới</h2>
+              <p className="text-xs font-semibold text-gray-500 max-w-md mx-auto leading-relaxed">
+                Hãy tham gia cùng 3500+ thành viên để mở rộng kết nối và phát triển cơ hội nghề nghiệp trong ngành Nhân sự.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {isSuccess ? (
+                <div className="p-8 rounded-2xl bg-white border border-[#D4AF37]/30 text-[#B8860B] text-center flex flex-col items-center justify-center space-y-3 font-bold text-sm shadow-inner animate-pulse">
+                  <CheckCircle size={32} className="text-[#D4AF37]" />
+                  <span>Đăng ký tham gia cộng đồng thành công!</span>
+                  <span className="text-xs text-gray-400 font-semibold">Thông tin của bạn đã được chuyển tới Ban Quản Trị phê duyệt.</span>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-xs font-bold text-gray-700">Họ và tên *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Nguyễn Văn A"
+                        value={form.fullName}
+                        onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-xs font-bold text-gray-700">Email công việc *</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="name@company.com"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-xs font-bold text-gray-700">Số điện thoại *</label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="0987654321"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-xs font-bold text-gray-700">Số năm kinh nghiệm HR *</label>
+                      <input
+                        type="number"
+                        required
+                        placeholder="Ví dụ: 3"
+                        min="0"
+                        value={form.experience}
+                        onChange={(e) => setForm({ ...form, experience: e.target.value })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-xs font-bold text-gray-700">Tên đơn vị công tác *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ví dụ: Job Service"
+                        value={form.company}
+                        onChange={(e) => setForm({ ...form, company: e.target.value })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-xs font-bold text-gray-700">Chức danh công việc *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ví dụ: TA Lead, HRBP"
+                        value={form.title}
+                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col space-y-1.5">
+                    <label className="text-xs font-bold text-gray-700 flex items-center space-x-1">
+                      <LinkedinIcon size={12} className="text-[#D4AF37]" />
+                      <span>Đường dẫn LinkedIn cá nhân *</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      placeholder="https://linkedin.com/in/username"
+                      value={form.linkedin}
+                      onChange={(e) => setForm({ ...form, linkedin: e.target.value })}
+                      className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-md hover:shadow-lg hover:scale-[1.01] transition-all flex items-center justify-center space-x-2 mt-4"
+                  >
+                    <Send size={14} />
+                    <span>Nộp đơn đăng ký thành viên</span>
+                  </button>
+                </>
+              )}
+            </form>
+          </div>
         </div>
       </section>
 
