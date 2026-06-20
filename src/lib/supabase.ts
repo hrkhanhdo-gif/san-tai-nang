@@ -114,11 +114,11 @@ export interface OrgMember {
 
 export interface HonoredMember {
   id: string;
-  name: string;
-  company: string;
-  title: string;
+  name?: string;
+  company?: string;
+  title?: string;
   image: string; // Base64 or URL
-  reason: string;
+  reason?: string;
   created_at: string;
 }
 
@@ -247,13 +247,13 @@ export const dbHelper = {
   // --- JOBS API ---
   async getJobs(): Promise<Job[]> {
     if (typeof window !== 'undefined') {
-      if (!localStorage.getItem('sntn_cleared_mock_data_v5')) {
+      if (!localStorage.getItem('sntn_cleared_mock_data_v6')) {
         localStorage.removeItem('sntn_jobs');
         localStorage.removeItem('sntn_activities');
         localStorage.removeItem('sntn_org_members');
         localStorage.removeItem('sntn_honored_members');
         localStorage.removeItem('sntn_system_settings');
-        localStorage.setItem('sntn_cleared_mock_data_v5', 'true');
+        localStorage.setItem('sntn_cleared_mock_data_v6', 'true');
       }
       const local = localStorage.getItem('sntn_jobs');
       if (local) {
@@ -525,17 +525,7 @@ export const dbHelper = {
     if (local) {
       return JSON.parse(local);
     } else {
-      const defaults: HonoredMember[] = [
-        {
-          id: 'honored-1',
-          name: 'Nguyễn Thị Mai Chi',
-          company: 'TechVina Group',
-          title: 'Talent Acquisition Manager',
-          image: '',
-          reason: 'Đã xuất sắc kết nối và chia sẻ nguồn ứng viên tuyển dụng lập trình viên cấp cao cho các đối tác trong mùa cao điểm năm 2026.',
-          created_at: new Date().toISOString()
-        }
-      ];
+      const defaults: HonoredMember[] = [];
       localStorage.setItem('sntn_honored_members', JSON.stringify(defaults));
       return defaults;
     }

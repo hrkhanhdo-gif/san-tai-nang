@@ -71,19 +71,9 @@ export default function Community() {
   });
   const [isEditingOrg, setIsEditingOrg] = useState(false);
 
-  // Honored member form state
-  const [honoredForm, setHonoredForm] = useState({
-    id: '',
-    name: '',
-    company: '',
-    title: '',
-    image: '',
-    reason: ''
-  });
-  const [isEditingHonored, setIsEditingHonored] = useState(false);
-
   // System settings form state
   const [settingsForm, setSettingsForm] = useState<SystemSettings>({});
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   useEffect(() => {
     // Load session
@@ -199,39 +189,36 @@ export default function Community() {
   };
 
   // --- HONORED MEMBERS HANDLERS ---
-  const handleSaveHonoredMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload: HonoredMember = {
-      id: honoredForm.id || 'honored-' + Math.random().toString(36).substr(2, 9),
-      name: honoredForm.name,
-      company: honoredForm.company,
-      title: honoredForm.title,
-      image: honoredForm.image,
-      reason: honoredForm.reason,
-      created_at: new Date().toISOString()
-    };
-    await dbHelper.saveHonoredMember(payload);
-    const updated = await dbHelper.getHonoredMembers();
-    setHonoredMembers(updated);
-    setHonoredForm({ id: '', name: '', company: '', title: '', image: '', reason: '' });
-    setIsEditingHonored(false);
-    alert('Đã lưu thành viên vinh danh thành công!');
-  };
-
-  const handleEditHonoredMember = (m: HonoredMember) => {
-    setHonoredForm({
-      id: m.id,
-      name: m.name,
-      company: m.company,
-      title: m.title,
-      image: m.image,
-      reason: m.reason
-    });
-    setIsEditingHonored(true);
+  const handleMultiFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      let loadedCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64 = reader.result as string;
+          const newMember: HonoredMember = {
+            id: 'honored-' + Math.random().toString(36).substr(2, 9),
+            image: base64,
+            created_at: new Date().toISOString()
+          };
+          await dbHelper.saveHonoredMember(newMember);
+          loadedCount++;
+          
+          if (loadedCount === files.length) {
+            const updated = await dbHelper.getHonoredMembers();
+            setHonoredMembers(updated);
+            alert(`Đã tải lên thành công ${files.length} ảnh vinh danh!`);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
   };
 
   const handleDeleteHonoredMember = async (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa thành viên này khỏi danh sách vinh danh?')) {
+    if (confirm('Bạn có chắc chắn muốn xóa ảnh vinh danh này?')) {
       await dbHelper.deleteHonoredMember(id);
       const updated = await dbHelper.getHonoredMembers();
       setHonoredMembers(updated);
@@ -627,56 +614,31 @@ export default function Community() {
           {honoredMembers.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200 max-w-md mx-auto">
               <Award className="text-gray-300 mx-auto mb-3" size={32} />
-              <p className="text-xs text-gray-400 font-semibold">Chưa có thành viên vinh danh nào được cập nhật.</p>
+              <p className="text-xs text-gray-400 font-semibold">Chưa có hình ảnh vinh danh nào được cập nhật.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto justify-center text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-5xl mx-auto justify-center">
               {honoredMembers.map((m, index) => (
                 <MotionDiv
                   key={m.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-white border border-[#D4AF37]/20 rounded-3xl p-6 shadow-md hover:shadow-xl hover:border-[#D4AF37]/50 transition-all duration-300 relative overflow-hidden flex flex-col justify-between"
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  onClick={() => setLightboxImage(m.image)}
+                  className="bg-white border border-[#D4AF37]/20 rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:border-[#D4AF37]/65 transition-all duration-300 cursor-pointer group aspect-[4/3] flex items-center justify-center p-2"
                 >
-                  <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#D4AF37]/5 blur-xl pointer-events-none" />
-                  
-                  <div>
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37]">
-                        <Award size={22} />
-                      </div>
-                      <span className="bg-[#D4AF37]/10 text-[#B8860B] text-[8px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm tracking-wider">
-                        Honored Member
+                  <div className="w-full h-full relative overflow-hidden rounded-xl bg-gray-50 flex items-center justify-center">
+                    <img
+                      src={m.image}
+                      alt={`Honored Member ${index + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <span className="text-white text-xs font-black uppercase tracking-wider bg-[#B8860B]/90 px-4 py-2 rounded-xl shadow-md border border-[#D4AF37]/30">
+                        Xem phóng to
                       </span>
                     </div>
-
-                    <div className="flex items-center space-x-4 mb-6">
-                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#D4AF37] shadow flex-shrink-0 bg-gray-50">
-                        {m.image ? (
-                          <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 font-extrabold text-lg">
-                            {m.name.substring(0, 1).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col">
-                        <h4 className="text-base font-black text-gray-900">{m.name}</h4>
-                        <span className="text-[11px] text-[#B8860B] font-bold tracking-wide leading-tight mt-0.5">{m.title}</span>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{m.company}</span>
-                      </div>
-                    </div>
-
-                    <div className="relative bg-[#FDFBF7] border border-[#D4AF37]/10 rounded-2xl p-4.5 mb-2 italic text-xs font-semibold text-gray-600 leading-relaxed">
-                      <span className="absolute -top-3 left-3 text-3xl font-serif text-[#D4AF37]/20 pointer-events-none select-none">“</span>
-                      <p className="relative z-10 pt-1 whitespace-pre-line">{m.reason}</p>
-                    </div>
-                  </div>
-
-                  <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-4 text-right border-t border-gray-100 pt-3">
-                    Thành viên cống hiến 2026
                   </div>
                 </MotionDiv>
               ))}
@@ -1371,155 +1333,67 @@ export default function Community() {
 
             {/* Sub-tab 2: Vinh danh thành viên (honored) */}
             {contentSubTab === 'honored' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Form to Add/Edit */}
-                <div className="lg:col-span-1 bg-[#FDFBF7] p-6 rounded-2xl border border-[#D4AF37]/15 shadow-sm">
-                  <h4 className="text-sm font-black text-gray-900 mb-4 uppercase tracking-wider">
-                    {isEditingHonored ? 'Chỉnh sửa vinh danh' : 'Thêm vinh danh mới'}
+              <div className="space-y-8 bg-[#FDFBF7]/40 border border-gray-100 p-6 rounded-2xl shadow-sm">
+                <div>
+                  <h4 className="text-sm font-black text-gray-900 mb-3 uppercase tracking-wider border-b border-gray-200 pb-2">
+                    Tải lên hình ảnh vinh danh
                   </h4>
-                  <form onSubmit={handleSaveHonoredMember} className="space-y-4">
-                    <div className="flex flex-col space-y-1">
-                      <label className="text-xs font-bold text-gray-700">Họ và tên *</label>
+                  <p className="text-xs text-gray-500 font-semibold mb-4 leading-relaxed">
+                    Bạn có thể chọn một hoặc nhiều tệp ảnh cùng lúc (ảnh bằng khen, ảnh chân dung thiết kế sẵn...) để đăng lên Bảng Vàng Danh Dự.
+                  </p>
+                  
+                  <div className="flex items-center justify-center">
+                    <label className="w-full max-w-xl h-40 border-2 border-dashed border-[#D4AF37]/40 hover:border-[#D4AF37] bg-white rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-colors p-6 shadow-sm text-center">
+                      <Upload className="text-[#D4AF37] mb-3" size={32} />
+                      <span className="text-xs font-black text-gray-700 uppercase tracking-wider">Chọn hoặc kéo thả các tệp ảnh vinh danh</span>
+                      <span className="text-[10px] text-gray-400 font-bold mt-1 uppercase">Định dạng: JPG, PNG, GIF (Có thể chọn nhiều tệp)</span>
                       <input
-                        type="text"
-                        required
-                        value={honoredForm.name}
-                        onChange={(e) => setHonoredForm({ ...honoredForm, name: e.target.value })}
-                        className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                        placeholder="Nguyễn Thị Mai Chi"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleMultiFileChange}
                       />
-                    </div>
-
-                    <div className="flex flex-col space-y-1">
-                      <label className="text-xs font-bold text-gray-700">Công ty *</label>
-                      <input
-                        type="text"
-                        required
-                        value={honoredForm.company}
-                        onChange={(e) => setHonoredForm({ ...honoredForm, company: e.target.value })}
-                        className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                        placeholder="Ví dụ: TechVina Group"
-                      />
-                    </div>
-
-                    <div className="flex flex-col space-y-1">
-                      <label className="text-xs font-bold text-gray-700">Chức vụ *</label>
-                      <input
-                        type="text"
-                        required
-                        value={honoredForm.title}
-                        onChange={(e) => setHonoredForm({ ...honoredForm, title: e.target.value })}
-                        className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
-                        placeholder="Ví dụ: TA Manager"
-                      />
-                    </div>
-
-                    <div className="flex flex-col space-y-1">
-                      <label className="text-xs font-bold text-gray-700">Lý do vinh danh *</label>
-                      <textarea
-                        required
-                        rows={4}
-                        value={honoredForm.reason}
-                        onChange={(e) => setHonoredForm({ ...honoredForm, reason: e.target.value })}
-                        className="px-4 py-2.5 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white resize-none"
-                        placeholder="Nhập lý do vinh danh chi tiết..."
-                      />
-                    </div>
-
-                    <div className="flex flex-col space-y-1">
-                      <label className="text-xs font-bold text-gray-700">Hình ảnh đại diện</label>
-                      <div className="flex items-center space-x-3 mt-1">
-                        {honoredForm.image ? (
-                          <img
-                            src={honoredForm.image}
-                            alt="Avatar preview"
-                            className="w-12 h-12 rounded-full object-cover border border-[#D4AF37]/30"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                            <Camera size={16} />
-                          </div>
-                        )}
-                        <label className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-[#D4AF37]/30 hover:border-[#D4AF37] rounded-lg cursor-pointer text-[10px] font-black uppercase text-gray-700 transition-colors">
-                          <Upload size={10} />
-                          <span>Tải ảnh lên</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleFileChange(e, (base64) => setHonoredForm({ ...honoredForm, image: base64 }))}
-                          />
-                        </label>
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-1">Dưới 2MB, định dạng JPG, PNG, GIF</p>
-                    </div>
-
-                    <div className="flex space-x-2 pt-2">
-                      <button
-                        type="submit"
-                        className="flex-grow py-2 rounded-xl text-white font-bold text-xs uppercase tracking-wider gradient-gold-bg shadow-sm"
-                      >
-                        Lưu vinh danh
-                      </button>
-                      {isEditingHonored && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setHonoredForm({ id: '', name: '', company: '', title: '', image: '', reason: '' });
-                            setIsEditingHonored(false);
-                          }}
-                          className="px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs uppercase tracking-wider transition-colors"
-                        >
-                          Hủy
-                        </button>
-                      )}
-                    </div>
-                  </form>
+                    </label>
+                  </div>
                 </div>
 
-                {/* List of current honored members */}
-                <div className="lg:col-span-2 space-y-4">
-                  <h4 className="text-sm font-black text-gray-900 mb-2 uppercase tracking-wider">Danh sách vinh danh hiện tại</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {honoredMembers.map((m) => (
-                      <div key={m.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-start justify-between shadow-sm">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 rounded-full overflow-hidden border border-[#D4AF37]/50 flex-shrink-0 bg-gray-50 flex items-center justify-center">
-                            {m.image ? (
-                              <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-[#D4AF37] font-black text-sm">{m.name.substring(0,1)}</span>
-                            )}
-                          </div>
-                          <div>
-                            <h5 className="text-sm font-black text-gray-900">{m.name}</h5>
-                            <span className="text-[10px] text-[#B8860B] font-bold block mt-0.5">{m.title}</span>
-                            <span className="text-[9px] text-gray-400 font-bold block mb-2 uppercase">{m.company}</span>
-                            <p className="text-[11px] text-gray-500 font-semibold leading-relaxed italic line-clamp-2 bg-gray-50 border border-gray-100 p-2 rounded-xl">
-                              &ldquo;{m.reason}&rdquo;
-                            </p>
-                          </div>
-                        </div>
+                <div>
+                  <h4 className="text-sm font-black text-gray-900 mb-4 uppercase tracking-wider border-b border-gray-200 pb-2">
+                    Danh sách hình ảnh vinh danh hiện có ({honoredMembers.length})
+                  </h4>
 
-                        <div className="flex flex-col space-y-1">
-                          <button
-                            type="button"
-                            onClick={() => handleEditHonoredMember(m)}
-                            className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                          >
-                            <Edit size={12} />
-                          </button>
+                  {honoredMembers.length === 0 ? (
+                    <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200 max-w-md mx-auto">
+                      <Award className="text-gray-300 mx-auto mb-2" size={28} />
+                      <p className="text-xs text-gray-400 font-semibold">Chưa có ảnh vinh danh nào được tải lên.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                      {honoredMembers.map((m, index) => (
+                        <div 
+                          key={m.id} 
+                          className="bg-white border border-[#D4AF37]/20 rounded-xl overflow-hidden shadow-sm relative group aspect-[4/3] flex items-center justify-center p-1.5"
+                        >
+                          <img
+                            src={m.image}
+                            alt={`Thumbnail ${index + 1}`}
+                            className="w-full h-full object-cover rounded-lg cursor-pointer"
+                            onClick={() => setLightboxImage(m.image)}
+                          />
                           <button
                             type="button"
                             onClick={() => handleDeleteHonoredMember(m.id)}
-                            className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                            className="absolute -top-2 -right-2 p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors shadow-md z-10"
+                            title="Xóa ảnh này"
                           >
-                            <Trash2 size={12} />
+                            <X size={12} />
                           </button>
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none" />
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1896,6 +1770,29 @@ export default function Community() {
 
           </div>
         </section>
+      )}
+
+      {/* Lightbox view modal */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button 
+            type="button" 
+            className="absolute top-6 right-6 text-white hover:text-gray-300 bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors"
+            onClick={() => setLightboxImage(null)}
+          >
+            <X size={24} />
+          </button>
+          <div className="relative max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+            <img 
+              src={lightboxImage} 
+              alt="Zoomed Honored Certificate" 
+              className="max-w-full max-h-[85vh] object-contain"
+            />
+          </div>
+        </div>
       )}
 
     </div>
