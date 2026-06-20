@@ -1,8 +1,8 @@
-// Supabase configuration and fallback mock layer
+// Supabase configuration - anon key is safe to be public (RLS policies control access)
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://rrnlddkadciefchdizct.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybmxkZGthZGNpZWZjaGRpemN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzA5NTMsImV4cCI6MjA5NzU0Njk1M30.t5ndpiD9tKwSLjB2Pgh01RJ5gP7Cnkg65QnRZJ8Kxb8';
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
@@ -210,6 +210,53 @@ const DEFAULT_JOBS: Job[] = [
 
 const DEFAULT_ACTIVITIES: CommunityActivity[] = [];
 
+// Helper to execute query against Supabase with local storage fallback
+async function executeDbQuery<T>(
+  supabaseOp: () => PromiseLike<{ data: any; error: any }>,
+  localStorageOp: () => T | Promise<T>,
+  onSuccess?: (data: any) => void
+): Promise<T> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabaseOp();
+      if (!error && data !== null) {
+        if (onSuccess) {
+          onSuccess(data);
+        }
+        return data as T;
+      }
+      if (error) {
+        console.warn('Supabase query error, falling back to localStorage:', error);
+      }
+    } catch (e) {
+      console.warn('Supabase query exception, falling back to localStorage:', e);
+    }
+  }
+  return await localStorageOp();
+}
+
+// Helper to execute mutation against Supabase with local storage fallback
+async function executeDbMutation(
+  supabaseOp: () => PromiseLike<{ error: any }>,
+  localStorageOp: () => void | Promise<void>
+): Promise<boolean> {
+  let success = false;
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabaseOp();
+      if (!error) {
+        success = true;
+      } else {
+        console.warn('Supabase mutation error, applying to localStorage only:', error);
+      }
+    } catch (e) {
+      console.warn('Supabase mutation exception, applying to localStorage only:', e);
+    }
+  }
+  await localStorageOp();
+  return success;
+}
+
 export const dbHelper = {
   // --- AUTH LAYER ---
   getCurrentUser(): UserSession | null {
@@ -261,16 +308,26 @@ export const dbHelper = {
 
   // --- JOBS API ---
   async getJobs(): Promise<Job[]> {
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem('sntn_jobs');
-      if (local) {
-        return JSON.parse(local);
-      } else {
-        localStorage.setItem('sntn_jobs', JSON.stringify(DEFAULT_JOBS));
+    return executeDbQuery<Job[]>(
+      () => supabase!.from('sntn_jobs').select('*').order('created_at', { ascending: false }),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const local = localStorage.getItem('sntn_jobs');
+          if (local) {
+            return JSON.parse(local);
+          } else {
+            localStorage.setItem('sntn_jobs', JSON.stringify(DEFAULT_JOBS));
+            return DEFAULT_JOBS;
+          }
+        }
         return DEFAULT_JOBS;
+      },
+      (data) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sntn_jobs', JSON.stringify(data));
+        }
       }
-    }
-    return DEFAULT_JOBS;
+    );
   },
 
   async addJob(job: Omit<Job, 'id' | 'created_at' | 'approved' | 'posted_by'>, postedByEmail?: string, approveImmediately = false): Promise<Job> {
@@ -282,54 +339,89 @@ export const dbHelper = {
       approved: approveImmediately
     };
 
-    if (typeof window !== 'undefined') {
-      const currentJobs = await dbHelper.getJobs();
-      const updatedJobs = [newJob, ...currentJobs];
-      localStorage.setItem('sntn_jobs', JSON.stringify(updatedJobs));
-    }
+    await executeDbMutation(
+      () => supabase!.from('sntn_jobs').insert(newJob),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const currentJobs = await dbHelper.getJobs();
+          const updatedJobs = [newJob, ...currentJobs];
+          localStorage.setItem('sntn_jobs', JSON.stringify(updatedJobs));
+        }
+      }
+    );
     return newJob;
   },
 
   async approveJob(jobId: string): Promise<boolean> {
-    if (typeof window === 'undefined') return false;
-    const currentJobs = await dbHelper.getJobs();
-    const idx = currentJobs.findIndex(j => j.id === jobId);
-    if (idx !== -1) {
-      currentJobs[idx].approved = true;
-      localStorage.setItem('sntn_jobs', JSON.stringify(currentJobs));
-      return true;
-    }
-    return false;
+    let found = false;
+    await executeDbMutation(
+      () => supabase!.from('sntn_jobs').update({ approved: true }).eq('id', jobId),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const currentJobs = await dbHelper.getJobs();
+          const idx = currentJobs.findIndex(j => j.id === jobId);
+          if (idx !== -1) {
+            currentJobs[idx].approved = true;
+            localStorage.setItem('sntn_jobs', JSON.stringify(currentJobs));
+            found = true;
+          }
+        }
+      }
+    );
+    return isSupabaseConfigured ? true : found;
   },
 
   async editJob(jobId: string, updatedData: Partial<Omit<Job, 'id' | 'created_at' | 'posted_by'>>): Promise<boolean> {
-    if (typeof window === 'undefined') return false;
-    const currentJobs = await dbHelper.getJobs();
-    const idx = currentJobs.findIndex(j => j.id === jobId);
-    if (idx !== -1) {
-      currentJobs[idx] = {
-        ...currentJobs[idx],
-        ...updatedData
-      };
-      localStorage.setItem('sntn_jobs', JSON.stringify(currentJobs));
-      return true;
-    }
-    return false;
+    let found = false;
+    await executeDbMutation(
+      () => supabase!.from('sntn_jobs').update(updatedData).eq('id', jobId),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const currentJobs = await dbHelper.getJobs();
+          const idx = currentJobs.findIndex(j => j.id === jobId);
+          if (idx !== -1) {
+            currentJobs[idx] = {
+              ...currentJobs[idx],
+              ...updatedData
+            };
+            localStorage.setItem('sntn_jobs', JSON.stringify(currentJobs));
+            found = true;
+          }
+        }
+      }
+    );
+    return isSupabaseConfigured ? true : found;
   },
 
   async deleteJob(jobId: string): Promise<boolean> {
-    if (typeof window === 'undefined') return false;
-    const currentJobs = await dbHelper.getJobs();
-    const updated = currentJobs.filter(j => j.id !== jobId);
-    localStorage.setItem('sntn_jobs', JSON.stringify(updated));
+    await executeDbMutation(
+      () => supabase!.from('sntn_jobs').delete().eq('id', jobId),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const currentJobs = await dbHelper.getJobs();
+          const updated = currentJobs.filter(j => j.id !== jobId);
+          localStorage.setItem('sntn_jobs', JSON.stringify(updated));
+        }
+      }
+    );
     return true;
   },
 
   // --- JOB APPLICATIONS (CVs) API ---
   async getApplications(): Promise<JobApplication[]> {
-    if (typeof window === 'undefined') return [];
-    const local = localStorage.getItem('sntn_applications');
-    return local ? JSON.parse(local) : [];
+    return executeDbQuery<JobApplication[]>(
+      () => supabase!.from('sntn_applications').select('*').order('created_at', { ascending: false }),
+      async () => {
+        if (typeof window === 'undefined') return [];
+        const local = localStorage.getItem('sntn_applications');
+        return local ? JSON.parse(local) : [];
+      },
+      (data) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sntn_applications', JSON.stringify(data));
+        }
+      }
+    );
   },
 
   async addApplication(app: Omit<JobApplication, 'id' | 'created_at'>): Promise<JobApplication> {
@@ -338,62 +430,77 @@ export const dbHelper = {
       id: 'app-' + Math.random().toString(36).substr(2, 9),
       created_at: new Date().toISOString()
     };
-    if (typeof window !== 'undefined') {
-      const apps = await dbHelper.getApplications();
-      const updated = [newApp, ...apps];
-      localStorage.setItem('sntn_applications', JSON.stringify(updated));
-    }
+    await executeDbMutation(
+      () => supabase!.from('sntn_applications').insert(newApp),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const apps = await dbHelper.getApplications();
+          const updated = [newApp, ...apps];
+          localStorage.setItem('sntn_applications', JSON.stringify(updated));
+        }
+      }
+    );
     return newApp;
   },
 
   // --- MEMBERS API (COMMUNITY REGISTRATION) ---
   async getMembers(): Promise<Member[]> {
-    if (typeof window === 'undefined') return [];
-    const local = localStorage.getItem('sntn_members');
-    if (local) {
-      return JSON.parse(local);
-    } else {
-      const defaults: Member[] = [
-        {
-          id: 'member-mock-1',
-          fullName: 'Nguyễn Văn An',
-          email: 'an.nguyen@fpt.com',
-          phone: '0912345678',
-          company: 'FPT Software',
-          title: 'Chuyên viên Tuyển dụng (TA Specialist)',
-          linkedin: 'https://linkedin.com/in/annguyen',
-          experience: 3,
-          status: 'pending',
-          created_at: new Date(Date.now() - 3600000 * 24).toISOString() // 1 day ago
-        },
-        {
-          id: 'member-mock-2',
-          fullName: 'Trần Thị Bình',
-          email: 'binh.tran@vingroup.com',
-          phone: '0987654321',
-          company: 'Vingroup',
-          title: 'Trưởng Phòng Nhân Sự (HR Manager)',
-          linkedin: 'https://linkedin.com/in/binhtran',
-          experience: 8,
-          status: 'pending',
-          created_at: new Date().toISOString() // just now
-        },
-        {
-          id: 'member-mock-3',
-          fullName: 'Lê Văn Cường',
-          email: 'cuong.le@tiki.vn',
-          phone: '0901234567',
-          company: 'Tiki',
-          title: 'Chuyên viên Tuyển dụng Cấp cao',
-          linkedin: 'https://linkedin.com/in/cuongle',
-          experience: 2,
-          status: 'approved',
-          created_at: new Date(Date.now() - 3600000 * 24 * 5).toISOString() // 5 days ago
+    return executeDbQuery<Member[]>(
+      () => supabase!.from('sntn_members').select('*').order('created_at', { ascending: false }),
+      async () => {
+        if (typeof window === 'undefined') return [];
+        const local = localStorage.getItem('sntn_members');
+        if (local) {
+          return JSON.parse(local);
+        } else {
+          const defaults: Member[] = [
+            {
+              id: 'member-mock-1',
+              fullName: 'Nguyễn Văn An',
+              email: 'an.nguyen@fpt.com',
+              phone: '0912345678',
+              company: 'FPT Software',
+              title: 'Chuyên viên Tuyển dụng (TA Specialist)',
+              linkedin: 'https://linkedin.com/in/annguyen',
+              experience: 3,
+              status: 'pending',
+              created_at: new Date(Date.now() - 3600000 * 24).toISOString() // 1 day ago
+            },
+            {
+              id: 'member-mock-2',
+              fullName: 'Trần Thị Bình',
+              email: 'binh.tran@vingroup.com',
+              phone: '0987654321',
+              company: 'Vingroup',
+              title: 'Trưởng Phòng Nhân Sự (HR Manager)',
+              linkedin: 'https://linkedin.com/in/binhtran',
+              experience: 8,
+              status: 'pending',
+              created_at: new Date().toISOString() // just now
+            },
+            {
+              id: 'member-mock-3',
+              fullName: 'Lê Văn Cường',
+              email: 'cuong.le@tiki.vn',
+              phone: '0901234567',
+              company: 'Tiki',
+              title: 'Chuyên viên Tuyển dụng Cấp cao',
+              linkedin: 'https://linkedin.com/in/cuongle',
+              experience: 2,
+              status: 'approved',
+              created_at: new Date(Date.now() - 3600000 * 24 * 5).toISOString() // 5 days ago
+            }
+          ];
+          localStorage.setItem('sntn_members', JSON.stringify(defaults));
+          return defaults;
         }
-      ];
-      localStorage.setItem('sntn_members', JSON.stringify(defaults));
-      return defaults;
-    }
+      },
+      (data) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sntn_members', JSON.stringify(data));
+        }
+      }
+    );
   },
 
   async registerMember(member: Omit<Member, 'id' | 'created_at' | 'status'>): Promise<Member> {
@@ -404,53 +511,82 @@ export const dbHelper = {
       created_at: new Date().toISOString(),
     };
 
-    if (typeof window !== 'undefined') {
-      const members = await dbHelper.getMembers();
-      members.push(newMember);
-      localStorage.setItem('sntn_members', JSON.stringify(members));
-    }
+    await executeDbMutation(
+      () => supabase!.from('sntn_members').insert(newMember),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const members = await dbHelper.getMembers();
+          members.push(newMember);
+          localStorage.setItem('sntn_members', JSON.stringify(members));
+        }
+      }
+    );
     return newMember;
   },
 
   async approveMember(memberId: string): Promise<boolean> {
-    if (typeof window === 'undefined') return false;
-    const members = await dbHelper.getMembers();
-    const idx = members.findIndex(m => m.id === memberId);
-    if (idx !== -1) {
-      members[idx].status = 'approved';
-      localStorage.setItem('sntn_members', JSON.stringify(members));
-      return true;
-    }
-    return false;
+    let found = false;
+    await executeDbMutation(
+      () => supabase!.from('sntn_members').update({ status: 'approved' }).eq('id', memberId),
+      async () => {
+        if (typeof window === 'undefined') return;
+        const members = await dbHelper.getMembers();
+        const idx = members.findIndex(m => m.id === memberId);
+        if (idx !== -1) {
+          members[idx].status = 'approved';
+          localStorage.setItem('sntn_members', JSON.stringify(members));
+          found = true;
+        }
+      }
+    );
+    return isSupabaseConfigured ? true : found;
   },
 
   async rejectMember(memberId: string): Promise<boolean> {
-    if (typeof window === 'undefined') return false;
-    const members = await dbHelper.getMembers();
-    const idx = members.findIndex(m => m.id === memberId);
-    if (idx !== -1) {
-      members[idx].status = 'rejected';
-      localStorage.setItem('sntn_members', JSON.stringify(members));
-      return true;
-    }
-    return false;
+    let found = false;
+    await executeDbMutation(
+      () => supabase!.from('sntn_members').update({ status: 'rejected' }).eq('id', memberId),
+      async () => {
+        if (typeof window === 'undefined') return;
+        const members = await dbHelper.getMembers();
+        const idx = members.findIndex(m => m.id === memberId);
+        if (idx !== -1) {
+          members[idx].status = 'rejected';
+          localStorage.setItem('sntn_members', JSON.stringify(members));
+          found = true;
+        }
+      }
+    );
+    return isSupabaseConfigured ? true : found;
   },
+
   async saveMember(member: Member): Promise<void> {
-    if (typeof window === 'undefined') return;
-    const members = await dbHelper.getMembers();
-    const idx = members.findIndex(m => m.id === member.id);
-    if (idx !== -1) {
-      members[idx] = member;
-    } else {
-      members.push(member);
-    }
-    localStorage.setItem('sntn_members', JSON.stringify(members));
+    await executeDbMutation(
+      () => supabase!.from('sntn_members').upsert(member),
+      async () => {
+        if (typeof window === 'undefined') return;
+        const members = await dbHelper.getMembers();
+        const idx = members.findIndex(m => m.id === member.id);
+        if (idx !== -1) {
+          members[idx] = member;
+        } else {
+          members.push(member);
+        }
+        localStorage.setItem('sntn_members', JSON.stringify(members));
+      }
+    );
   },
+
   async deleteMember(id: string): Promise<void> {
-    if (typeof window === 'undefined') return;
-    const members = await dbHelper.getMembers();
-    const filtered = members.filter(m => m.id !== id);
-    localStorage.setItem('sntn_members', JSON.stringify(filtered));
+    await executeDbMutation(
+      () => supabase!.from('sntn_members').delete().eq('id', id),
+      async () => {
+        if (typeof window === 'undefined') return;
+        const members = await dbHelper.getMembers();
+        const filtered = members.filter(m => m.id !== id);
+        localStorage.setItem('sntn_members', JSON.stringify(filtered));
+      }
+    );
   },
 
   // --- CONTACT MESSAGES API ---
@@ -461,27 +597,42 @@ export const dbHelper = {
       created_at: new Date().toISOString(),
     };
 
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem('sntn_messages');
-      const messages = local ? JSON.parse(local) : [];
-      messages.push(newMsg);
-      localStorage.setItem('sntn_messages', JSON.stringify(messages));
-    }
+    await executeDbMutation(
+      () => supabase!.from('sntn_messages').insert(newMsg),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const local = localStorage.getItem('sntn_messages');
+          const messages = local ? JSON.parse(local) : [];
+          messages.push(newMsg);
+          localStorage.setItem('sntn_messages', JSON.stringify(messages));
+        }
+      }
+    );
     return newMsg;
   },
 
   // --- COMMUNITY ACTIVITIES API ---
   async getActivities(): Promise<CommunityActivity[]> {
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem('sntn_activities');
-      if (local) {
-        return JSON.parse(local);
-      } else {
-        localStorage.setItem('sntn_activities', JSON.stringify(DEFAULT_ACTIVITIES));
+    return executeDbQuery<CommunityActivity[]>(
+      () => supabase!.from('sntn_activities').select('*').order('created_at', { ascending: false }),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const local = localStorage.getItem('sntn_activities');
+          if (local) {
+            return JSON.parse(local);
+          } else {
+            localStorage.setItem('sntn_activities', JSON.stringify(DEFAULT_ACTIVITIES));
+            return DEFAULT_ACTIVITIES;
+          }
+        }
         return DEFAULT_ACTIVITIES;
+      },
+      (data) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sntn_activities', JSON.stringify(data));
+        }
       }
-    }
-    return DEFAULT_ACTIVITIES;
+    );
   },
 
   async addActivity(act: Omit<CommunityActivity, 'id' | 'created_at' | 'likes' | 'comments'>): Promise<CommunityActivity> {
@@ -492,31 +643,61 @@ export const dbHelper = {
       comments: [],
       created_at: new Date().toISOString()
     };
-    if (typeof window !== 'undefined') {
-      const activities = await dbHelper.getActivities();
-      const updated = [newAct, ...activities];
-      localStorage.setItem('sntn_activities', JSON.stringify(updated));
-    }
+    await executeDbMutation(
+      () => supabase!.from('sntn_activities').insert(newAct),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const activities = await dbHelper.getActivities();
+          const updated = [newAct, ...activities];
+          localStorage.setItem('sntn_activities', JSON.stringify(updated));
+        }
+      }
+    );
     return newAct;
   },
 
   async toggleLikeActivity(activityId: string, userEmail: string): Promise<string[]> {
-    if (typeof window === 'undefined') return [];
-    const activities = await dbHelper.getActivities();
-    const idx = activities.findIndex(a => a.id === activityId);
-    if (idx !== -1) {
-      const likes = activities[idx].likes || [];
-      const userIdx = likes.indexOf(userEmail);
-      if (userIdx === -1) {
-        likes.push(userEmail);
-      } else {
-        likes.splice(userIdx, 1);
+    let resultLikes: string[] = [];
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data } = await supabase.from('sntn_activities').select('likes').eq('id', activityId).single();
+        if (data) {
+          const likes = data.likes || [];
+          const userIdx = likes.indexOf(userEmail);
+          if (userIdx === -1) {
+            likes.push(userEmail);
+          } else {
+            likes.splice(userIdx, 1);
+          }
+          const { error } = await supabase.from('sntn_activities').update({ likes }).eq('id', activityId);
+          if (!error) {
+            resultLikes = likes;
+          }
+        }
+      } catch (e) {
+        console.warn('Supabase toggleLike error:', e);
       }
-      activities[idx].likes = likes;
-      localStorage.setItem('sntn_activities', JSON.stringify(activities));
-      return likes;
     }
-    return [];
+    
+    if (typeof window !== 'undefined') {
+      const activities = await dbHelper.getActivities();
+      const idx = activities.findIndex(a => a.id === activityId);
+      if (idx !== -1) {
+        const likes = activities[idx].likes || [];
+        const userIdx = likes.indexOf(userEmail);
+        if (userIdx === -1) {
+          likes.push(userEmail);
+        } else {
+          likes.splice(userIdx, 1);
+        }
+        activities[idx].likes = likes;
+        localStorage.setItem('sntn_activities', JSON.stringify(activities));
+        if (resultLikes.length === 0) {
+          resultLikes = likes;
+        }
+      }
+    }
+    return resultLikes;
   },
 
   async addCommentToActivity(activityId: string, comment: Omit<ActivityComment, 'id' | 'created_at'>): Promise<ActivityComment> {
@@ -525,6 +706,17 @@ export const dbHelper = {
       id: 'comment-' + Math.random().toString(36).substr(2, 9),
       created_at: new Date().toISOString()
     };
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data } = await supabase.from('sntn_activities').select('comments').eq('id', activityId).single();
+        if (data) {
+          const comments = [...(data.comments || []), newComment];
+          await supabase.from('sntn_activities').update({ comments }).eq('id', activityId);
+        }
+      } catch (e) {
+        console.warn('Supabase addComment error:', e);
+      }
+    }
     if (typeof window !== 'undefined') {
       const activities = await dbHelper.getActivities();
       const idx = activities.findIndex(a => a.id === activityId);
@@ -535,142 +727,211 @@ export const dbHelper = {
     }
     return newComment;
   },
+
   async deleteActivity(id: string): Promise<boolean> {
-    if (typeof window === 'undefined') return false;
-    const activities = await dbHelper.getActivities();
-    const filtered = activities.filter(a => a.id !== id);
-    localStorage.setItem('sntn_activities', JSON.stringify(filtered));
+    await executeDbMutation(
+      () => supabase!.from('sntn_activities').delete().eq('id', id),
+      async () => {
+        if (typeof window === 'undefined') return;
+        const activities = await dbHelper.getActivities();
+        const filtered = activities.filter(a => a.id !== id);
+        localStorage.setItem('sntn_activities', JSON.stringify(filtered));
+      }
+    );
     return true;
   },
 
   // --- ORG MEMBERS API ---
   async getOrgMembers(): Promise<OrgMember[]> {
-    if (typeof window === 'undefined') return [];
-    const local = localStorage.getItem('sntn_org_members');
-    if (local) {
-      return JSON.parse(local);
-    } else {
-      const defaults: OrgMember[] = [
-        {
-          id: 'org-1',
-          name: 'Anh Hàng Nghĩa Thuận',
-          role: 'Sáng lập Cộng đồng Săn Tài Năng & CEO Job Service',
-          company: 'Job Service',
-          image: '/thuan-hn.jpg',
-          roleType: 'founder',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'org-2',
-          name: 'Nguyễn Thị B',
-          role: 'TA MANAGER',
-          company: 'CÔNG TY XZC',
-          image: '/nguyen-thi-c.png',
-          roleType: 'admin',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'org-3',
-          name: 'Nguyễn Văn B',
-          role: 'LEADER TUYỂN DỤNG',
-          company: 'COCACOLA',
-          image: '',
-          roleType: 'leader',
-          department: 'Ban Tuyển dụng',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'org-4',
-          name: 'Nguyễn Văn C',
-          role: 'TRƯỞNG NHÓM TUYỂN DỤNG',
-          company: 'TIKITIKI',
-          image: '',
-          roleType: 'member',
-          parentLeaderId: 'org-3',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'org-5',
-          name: 'Nguyễn Văn BCX',
-          role: 'TA MANAGER',
-          company: 'JOB SV',
-          image: '',
-          roleType: 'member',
-          parentLeaderId: 'org-3',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'org-6',
-          name: 'Nguyễn Văn B',
-          role: 'LEADER',
-          company: 'BAUDSFB',
-          image: '',
-          roleType: 'member',
-          parentLeaderId: 'org-3',
-          created_at: new Date().toISOString()
+    return executeDbQuery<OrgMember[]>(
+      () => supabase!.from('sntn_org_members').select('*').order('created_at', { ascending: true }),
+      async () => {
+        if (typeof window === 'undefined') return [];
+        const local = localStorage.getItem('sntn_org_members');
+        if (local) {
+          return JSON.parse(local);
+        } else {
+          const defaults: OrgMember[] = [
+            {
+              id: 'org-1',
+              name: 'Anh Hàng Nghĩa Thuận',
+              role: 'Sáng lập Cộng đồng Săn Tài Năng & CEO Job Service',
+              company: 'Job Service',
+              image: '/thuan-hn.jpg',
+              roleType: 'founder',
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 'org-2',
+              name: 'Nguyễn Thị B',
+              role: 'TA MANAGER',
+              company: 'CÔNG TY XZC',
+              image: '/nguyen-thi-c.png',
+              roleType: 'admin',
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 'org-3',
+              name: 'Nguyễn Văn B',
+              role: 'LEADER TUYỂN DỤNG',
+              company: 'COCACOLA',
+              image: '',
+              roleType: 'leader',
+              department: 'Ban Tuyển dụng',
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 'org-4',
+              name: 'Nguyễn Văn C',
+              role: 'TRƯỞNG NHÓM TUYỂN DỤNG',
+              company: 'TIKITIKI',
+              image: '',
+              roleType: 'member',
+              parentLeaderId: 'org-3',
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 'org-5',
+              name: 'Nguyễn Văn BCX',
+              role: 'TA MANAGER',
+              company: 'JOB SV',
+              image: '',
+              roleType: 'member',
+              parentLeaderId: 'org-3',
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 'org-6',
+              name: 'Nguyễn Văn B',
+              role: 'LEADER',
+              company: 'BAUDSFB',
+              image: '',
+              roleType: 'member',
+              parentLeaderId: 'org-3',
+              created_at: new Date().toISOString()
+            }
+          ];
+          localStorage.setItem('sntn_org_members', JSON.stringify(defaults));
+          return defaults;
         }
-      ];
-      localStorage.setItem('sntn_org_members', JSON.stringify(defaults));
-      return defaults;
-    }
+      },
+      (data) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sntn_org_members', JSON.stringify(data));
+        }
+      }
+    );
   },
+
   async saveOrgMember(member: OrgMember): Promise<void> {
-    if (typeof window === 'undefined') return;
-    const members = await dbHelper.getOrgMembers();
-    const idx = members.findIndex(m => m.id === member.id);
-    if (idx !== -1) {
-      members[idx] = member;
-    } else {
-      members.push(member);
-    }
-    localStorage.setItem('sntn_org_members', JSON.stringify(members));
+    await executeDbMutation(
+      () => supabase!.from('sntn_org_members').upsert(member),
+      async () => {
+        if (typeof window === 'undefined') return;
+        const members = await dbHelper.getOrgMembers();
+        const idx = members.findIndex(m => m.id === member.id);
+        if (idx !== -1) {
+          members[idx] = member;
+        } else {
+          members.push(member);
+        }
+        localStorage.setItem('sntn_org_members', JSON.stringify(members));
+      }
+    );
   },
+
   async deleteOrgMember(id: string): Promise<void> {
-    if (typeof window === 'undefined') return;
-    const members = await dbHelper.getOrgMembers();
-    const filtered = members.filter(m => m.id !== id);
-    localStorage.setItem('sntn_org_members', JSON.stringify(filtered));
+    await executeDbMutation(
+      () => supabase!.from('sntn_org_members').delete().eq('id', id),
+      async () => {
+        if (typeof window === 'undefined') return;
+        const members = await dbHelper.getOrgMembers();
+        const filtered = members.filter(m => m.id !== id);
+        localStorage.setItem('sntn_org_members', JSON.stringify(filtered));
+      }
+    );
   },
 
   // --- HONORED MEMBERS API ---
   async getHonoredMembers(): Promise<HonoredMember[]> {
-    if (typeof window === 'undefined') return [];
-    const local = localStorage.getItem('sntn_honored_members');
-    if (local) {
-      return JSON.parse(local);
-    } else {
-      const defaults: HonoredMember[] = [];
-      localStorage.setItem('sntn_honored_members', JSON.stringify(defaults));
-      return defaults;
-    }
+    return executeDbQuery<HonoredMember[]>(
+      () => supabase!.from('sntn_honored_members').select('*').order('created_at', { ascending: true }),
+      async () => {
+        if (typeof window === 'undefined') return [];
+        const local = localStorage.getItem('sntn_honored_members');
+        if (local) {
+          return JSON.parse(local);
+        } else {
+          const defaults: HonoredMember[] = [];
+          localStorage.setItem('sntn_honored_members', JSON.stringify(defaults));
+          return defaults;
+        }
+      },
+      (data) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sntn_honored_members', JSON.stringify(data));
+        }
+      }
+    );
   },
+
   async saveHonoredMember(member: HonoredMember): Promise<void> {
-    if (typeof window === 'undefined') return;
-    const members = await dbHelper.getHonoredMembers();
-    const idx = members.findIndex(m => m.id === member.id);
-    if (idx !== -1) {
-      members[idx] = member;
-    } else {
-      members.push(member);
-    }
-    localStorage.setItem('sntn_honored_members', JSON.stringify(members));
+    await executeDbMutation(
+      () => supabase!.from('sntn_honored_members').upsert(member),
+      async () => {
+        if (typeof window === 'undefined') return;
+        const members = await dbHelper.getHonoredMembers();
+        const idx = members.findIndex(m => m.id === member.id);
+        if (idx !== -1) {
+          members[idx] = member;
+        } else {
+          members.push(member);
+        }
+        localStorage.setItem('sntn_honored_members', JSON.stringify(members));
+      }
+    );
   },
+
   async deleteHonoredMember(id: string): Promise<void> {
-    if (typeof window === 'undefined') return;
-    const members = await dbHelper.getHonoredMembers();
-    const filtered = members.filter(m => m.id !== id);
-    localStorage.setItem('sntn_honored_members', JSON.stringify(filtered));
+    await executeDbMutation(
+      () => supabase!.from('sntn_honored_members').delete().eq('id', id),
+      async () => {
+        if (typeof window === 'undefined') return;
+        const members = await dbHelper.getHonoredMembers();
+        const filtered = members.filter(m => m.id !== id);
+        localStorage.setItem('sntn_honored_members', JSON.stringify(filtered));
+      }
+    );
   },
 
   // --- SYSTEM SETTINGS API ---
   async getSystemSettings(): Promise<SystemSettings> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.from('sntn_system_settings').select('*').eq('id', 'global_settings').maybeSingle();
+        if (!error && data) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('sntn_system_settings', JSON.stringify(data));
+          }
+          return data as SystemSettings;
+        }
+      } catch (e) {
+        console.warn('Supabase getSystemSettings error:', e);
+      }
+    }
     if (typeof window === 'undefined') return {};
     const local = localStorage.getItem('sntn_system_settings');
     return local ? JSON.parse(local) : {};
   },
+
   async saveSystemSettings(settings: SystemSettings): Promise<void> {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('sntn_system_settings', JSON.stringify(settings));
+    await executeDbMutation(
+      () => supabase!.from('sntn_system_settings').upsert({ id: 'global_settings', ...settings }),
+      async () => {
+        if (typeof window === 'undefined') return;
+        localStorage.setItem('sntn_system_settings', JSON.stringify(settings));
+      }
+    );
   }
 };
 
