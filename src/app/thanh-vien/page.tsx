@@ -54,6 +54,28 @@ export default function MembersPage() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const founders = orgMembers.filter(m => m.roleType === 'founder');
+  const admins = orgMembers.filter(m => m.roleType === 'admin');
+  const leaders = orgMembers.filter(m => m.roleType === 'leader');
+  const members = orgMembers.filter(m => m.roleType === 'member');
+
+  // Nhóm thành viên theo Trưởng ban quản lý trực tiếp
+  const membersByLeader: Record<string, OrgMember[]> = {};
+  const generalMembers: OrgMember[] = [];
+
+  members.forEach(m => {
+    if (m.parentLeaderId && leaders.some(l => l.id === m.parentLeaderId)) {
+      if (!membersByLeader[m.parentLeaderId]) {
+        membersByLeader[m.parentLeaderId] = [];
+      }
+      membersByLeader[m.parentLeaderId].push(m);
+    } else {
+      generalMembers.push(m);
+    }
+  });
+
+  const totalColsCount = leaders.length + (generalMembers.length > 0 ? 1 : 0);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Header */}
@@ -112,7 +134,7 @@ export default function MembersPage() {
             
             {/* Tier 1: Founder / Co-Founder */}
             <div className="flex flex-wrap items-center justify-center gap-8">
-              {orgMembers.filter(m => m.roleType === 'founder').map((m) => (
+              {founders.map((m) => (
                 <MotionDiv
                   key={m.id}
                   initial={{ opacity: 0, y: -20 }}
@@ -144,7 +166,7 @@ export default function MembersPage() {
             </div>
 
             {/* Connecting Line 1 (Founders to Admins) */}
-            {orgMembers.filter(m => m.roleType === 'admin').length > 0 && (
+            {admins.length > 0 && (
               <div className="w-[3px] h-12 bg-gradient-to-b from-[#D4AF37] to-amber-500 my-1 relative">
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-[#D4AF37] rounded-full shadow-sm" />
                 <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-amber-500 rounded-full shadow-sm" />
@@ -153,7 +175,7 @@ export default function MembersPage() {
 
             {/* Tier 2: Thư ký / Admin */}
             <div className="flex flex-wrap items-center justify-center gap-8">
-              {orgMembers.filter(m => m.roleType === 'admin').map((m) => (
+              {admins.map((m) => (
                 <MotionDiv
                   key={m.id}
                   initial={{ opacity: 0, y: 15 }}
@@ -184,102 +206,193 @@ export default function MembersPage() {
               ))}
             </div>
 
-            {/* Connecting Line 2 (Admins to Leaders) */}
-            {orgMembers.filter(m => m.roleType === 'leader').length > 0 && (
+            {/* Connecting Line 2 (Admins to Leaders container) */}
+            {totalColsCount > 0 && (
               <div className="w-[3px] h-12 bg-gradient-to-b from-amber-500 to-[#CD7F32] my-1 relative">
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-amber-500 rounded-full shadow-sm" />
                 <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-[#CD7F32] rounded-full shadow-sm" />
               </div>
             )}
 
-            {/* Tier 3: Trưởng Ban */}
-            <div className="flex flex-wrap items-center justify-center gap-8">
-              {orgMembers.filter(m => m.roleType === 'leader').map((m) => (
-                <MotionDiv
-                  key={m.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
-                  className="relative z-10 flex flex-col items-center"
-                >
-                  <div className="relative p-1 rounded-full bg-gradient-to-tr from-[#CD7F32] via-[#F5D6B8] to-[#995C24] shadow-md">
-                    {m.image ? (
-                      <img
-                        src={m.image}
-                        alt={m.name}
-                        className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-inner"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-full bg-[#CD7F32]/10 border-4 border-white shadow-inner flex items-center justify-center text-[#995C24] font-black text-lg">
-                        {getInitials(m.name)}
-                      </div>
+            {/* Tier 3 & Tier 4: Các Trưởng Ban (kèm Thành viên trực thuộc) và Thành viên chung */}
+            {totalColsCount > 0 && (
+              <div className="relative flex flex-row items-start justify-center gap-x-16 gap-y-20 flex-wrap pt-10 w-full">
+                {/* Horizontal line connecting columns on desktop */}
+                {totalColsCount > 1 && (
+                  <div className="hidden md:block absolute top-0 left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+                )}
+
+                {/* Render Leader Columns */}
+                {leaders.map((leader) => {
+                  const subMembers = membersByLeader[leader.id] || [];
+                  return (
+                    <div key={leader.id} className="relative flex flex-col items-center flex-1 min-w-[280px] max-w-full">
+                      {/* Vertical connector to horizontal bar */}
+                      {totalColsCount > 1 && (
+                        <div className="hidden md:block absolute top-[-40px] w-[2px] h-[40px] bg-amber-500/50" />
+                      )}
+
+                      {/* Leader Card */}
+                      <MotionDiv
+                        initial={{ opacity: 0, y: 15 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                        className="relative z-10 flex flex-col items-center"
+                      >
+                        <div className="relative p-1 rounded-full bg-gradient-to-tr from-[#CD7F32] via-[#F5D6B8] to-[#995C24] shadow-md">
+                          {leader.image ? (
+                            <img
+                              src={leader.image}
+                              alt={leader.name}
+                              className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-inner"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 rounded-full bg-[#CD7F32]/10 border-4 border-white shadow-inner flex items-center justify-center text-[#995C24] font-black text-lg">
+                              {getInitials(leader.name)}
+                            </div>
+                          )}
+                          <span className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-[#995C24] text-white text-[8px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-sm tracking-wider whitespace-nowrap">
+                            TRƯỞNG BAN
+                          </span>
+                        </div>
+                        <div className="mt-5 bg-white border border-[#CD7F32]/25 rounded-2xl p-5 shadow-sm w-64 transition-all hover:scale-105 hover:border-[#CD7F32]/50 duration-300 text-center">
+                          <h4 className="text-sm font-black text-gray-900">{leader.name}</h4>
+                          {leader.department && (
+                            <span className="inline-block bg-[#CD7F32]/10 text-[#995C24] text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full mt-1.5 mb-1">
+                              {leader.department}
+                            </span>
+                          )}
+                          <p className="text-[9px] text-[#CD7F32] font-bold uppercase tracking-wider mt-0.5">{leader.company}</p>
+                          <div className="w-8 h-[1px] bg-[#CD7F32]/10 mx-auto my-2.5" />
+                          <p className="text-xs text-gray-500 font-semibold leading-relaxed">
+                            {leader.role}
+                          </p>
+                        </div>
+                      </MotionDiv>
+
+                      {/* Connector line from Leader to Sub-members */}
+                      {subMembers.length > 0 && (
+                        <div className="w-[2px] h-10 bg-gradient-to-b from-[#CD7F32]/60 to-gray-200 my-3" />
+                      )}
+
+                      {/* Sub-members grid (centered under Leader) */}
+                      {subMembers.length > 0 && (
+                        <div className="flex flex-wrap justify-center gap-4 w-full mt-1">
+                          {subMembers.map((m) => (
+                            <MotionDiv
+                              key={m.id}
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              whileInView={{ opacity: 1, scale: 1 }}
+                              viewport={{ once: true }}
+                              transition={{ duration: 0.4 }}
+                              className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-[#D4AF37]/30 transition-all flex flex-col items-center text-center duration-300 w-44"
+                            >
+                              <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200 mb-3 flex-shrink-0 bg-gray-50 flex items-center justify-center">
+                                {m.image ? (
+                                  <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-[#D4AF37]/10 text-[#B8860B] font-bold text-xs">
+                                    {getInitials(m.name)}
+                                  </div>
+                                )}
+                              </div>
+                              <h4 className="text-xs font-black text-gray-900 line-clamp-1">{m.name}</h4>
+                              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block mt-0.5">
+                                Thành viên
+                              </span>
+                              <span className="text-[8px] text-[#B8860B] font-bold block mb-2 uppercase line-clamp-1">
+                                {m.company}
+                              </span>
+                              <p className="text-[11px] text-gray-600 font-semibold leading-relaxed mt-1 line-clamp-2">
+                                {m.role}
+                              </p>
+                            </MotionDiv>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* General Members Column (if any) */}
+                {generalMembers.length > 0 && (
+                  <div className="relative flex flex-col items-center flex-1 min-w-[280px] max-w-full">
+                    {/* Vertical connector to horizontal bar */}
+                    {totalColsCount > 1 && (
+                      <div className="hidden md:block absolute top-[-40px] w-[2px] h-[40px] bg-gray-300/50" />
                     )}
-                    <span className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-[#995C24] text-white text-[8px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-sm tracking-wider whitespace-nowrap">
-                      TRƯỞNG BAN
-                    </span>
-                  </div>
-                  <div className="mt-5 bg-white border border-[#CD7F32]/25 rounded-2xl p-5 shadow-sm max-w-xs transition-all hover:scale-105 hover:border-[#CD7F32]/50 duration-300 text-center">
-                    <h4 className="text-sm font-black text-gray-900">{m.name}</h4>
-                    <p className="text-[9px] text-[#CD7F32] font-bold uppercase tracking-wider mt-0.5">{m.company}</p>
-                    <div className="w-8 h-[1px] bg-[#CD7F32]/10 mx-auto my-2.5" />
-                    <p className="text-xs text-gray-500 font-semibold leading-relaxed">
-                      {m.role}
-                    </p>
-                  </div>
-                </MotionDiv>
-              ))}
-            </div>
 
-            {/* Connecting Line 3 (Leaders to Members) */}
-            {orgMembers.filter(m => m.roleType === 'member').length > 0 && (
-              <div className="w-[3px] h-12 bg-gradient-to-b from-[#CD7F32] to-gray-200 my-1 relative">
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-[#CD7F32] rounded-full shadow-sm" />
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-200 rounded-full shadow-sm" />
-              </div>
-            )}
-
-            {/* Tier 4: Thành viên */}
-            {orgMembers.filter(m => m.roleType === 'member').length > 0 && (
-              <div className="max-w-6xl w-full mx-auto px-6 mt-4 relative z-10">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-center">
-                  {orgMembers.filter(m => m.roleType === 'member').map((m) => (
+                    {/* General Members Header Card */}
                     <MotionDiv
-                      key={m.id}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
-                      transition={{ duration: 0.4 }}
-                      className="bg-white border border-gray-250 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[#D4AF37]/30 transition-all flex flex-col items-center text-center duration-300"
+                      transition={{ duration: 0.5 }}
+                      className="relative z-10 flex flex-col items-center"
                     >
-                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 mb-4 flex-shrink-0 bg-gray-50 flex items-center justify-center">
-                        {m.image ? (
-                          <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-[#D4AF37]/10 text-[#B8860B] font-bold text-sm">
-                            {getInitials(m.name)}
-                          </div>
-                        )}
+                      <div className="relative p-1 rounded-full bg-gradient-to-tr from-gray-300 via-gray-100 to-gray-450 shadow-md">
+                        <div className="w-20 h-20 rounded-full bg-gray-50 border-4 border-white shadow-inner flex items-center justify-center text-gray-400 font-black text-lg">
+                          STN
+                        </div>
+                        <span className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-gray-500 text-white text-[8px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-sm tracking-wider whitespace-nowrap">
+                          THÀNH VIÊN
+                        </span>
                       </div>
-                      <h4 className="text-sm font-black text-gray-900">{m.name}</h4>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mt-0.5">
-                        Thành viên
-                      </span>
-                      <span className="text-[9px] text-[#B8860B] font-bold block mb-3 uppercase">
-                        {m.company}
-                      </span>
-                      <p className="text-xs text-gray-600 font-semibold leading-relaxed mt-1 line-clamp-3">
-                        {m.role}
-                      </p>
+                      <div className="mt-5 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm w-64 transition-all hover:scale-105 duration-300 text-center">
+                        <h4 className="text-sm font-black text-gray-900">Thành viên chung</h4>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Săn Tài Năng</p>
+                        <div className="w-8 h-[1px] bg-gray-150 mx-auto my-2.5" />
+                        <p className="text-xs text-gray-500 font-semibold leading-relaxed">
+                          Các thành viên hoạt động độc lập hoặc chưa phân ban cụ thể.
+                        </p>
+                      </div>
                     </MotionDiv>
-                  ))}
-                </div>
+
+                    {/* Connector line to general members */}
+                    <div className="w-[2px] h-10 bg-gray-250 my-3" />
+
+                    {/* General members list */}
+                    <div className="flex flex-wrap justify-center gap-4 w-full mt-1">
+                      {generalMembers.map((m) => (
+                        <MotionDiv
+                          key={m.id}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.4 }}
+                          className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-[#D4AF37]/30 transition-all flex flex-col items-center text-center duration-300 w-44"
+                        >
+                          <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200 mb-3 flex-shrink-0 bg-gray-50 flex items-center justify-center">
+                            {m.image ? (
+                              <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-[#D4AF37]/10 text-[#B8860B] font-bold text-xs">
+                                {getInitials(m.name)}
+                              </div>
+                            )}
+                          </div>
+                          <h4 className="text-xs font-black text-gray-900 line-clamp-1">{m.name}</h4>
+                          <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block mt-0.5">
+                            Thành viên
+                          </span>
+                          <span className="text-[8px] text-[#B8860B] font-bold block mb-2 uppercase line-clamp-1">
+                            {m.company}
+                          </span>
+                          <p className="text-[11px] text-gray-600 font-semibold leading-relaxed mt-1 line-clamp-2">
+                            {m.role}
+                          </p>
+                        </MotionDiv>
+                      ))}
+                    </div>
               </div>
             )}
 
           </div>
-        </div>
-      </section>
+        )}
+      </div>
+    </div>
+  </section>
 
       {/* Bảng vàng danh dự (Carousel) */}
       <section className="py-20 bg-gradient-to-b from-white to-[#FDFBF7]/50 border-b border-gray-100 relative overflow-hidden text-center">

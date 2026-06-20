@@ -109,6 +109,8 @@ export interface OrgMember {
   company: string;
   image: string; // Base64 or URL
   roleType: 'founder' | 'admin' | 'leader' | 'member';
+  department?: string;
+  parentLeaderId?: string;
   created_at: string;
 }
 
@@ -247,13 +249,13 @@ export const dbHelper = {
   // --- JOBS API ---
   async getJobs(): Promise<Job[]> {
     if (typeof window !== 'undefined') {
-      if (!localStorage.getItem('sntn_cleared_mock_data_v7')) {
+      if (!localStorage.getItem('sntn_cleared_mock_data_v8')) {
         localStorage.removeItem('sntn_jobs');
         localStorage.removeItem('sntn_activities');
         localStorage.removeItem('sntn_org_members');
         localStorage.removeItem('sntn_honored_members');
         localStorage.removeItem('sntn_system_settings');
-        localStorage.setItem('sntn_cleared_mock_data_v7', 'true');
+        localStorage.setItem('sntn_cleared_mock_data_v8', 'true');
       }
       const local = localStorage.getItem('sntn_jobs');
       if (local) {
@@ -505,11 +507,51 @@ export const dbHelper = {
         },
         {
           id: 'org-2',
-          name: 'Chị Nguyễn Thị C',
-          role: 'Thư ký Ban điều hành & Quản trị viên',
-          company: 'Săn Tài Năng',
+          name: 'Nguyễn Thị B',
+          role: 'TA MANAGER',
+          company: 'CÔNG TY XZC',
           image: '/nguyen-thi-c.png',
           roleType: 'admin',
+          created_at: new Date().toISOString()
+        },
+        {
+          id: 'org-3',
+          name: 'Nguyễn Văn B',
+          role: 'LEADER TUYỂN DỤNG',
+          company: 'COCACOLA',
+          image: '',
+          roleType: 'leader',
+          department: 'Ban Tuyển dụng',
+          created_at: new Date().toISOString()
+        },
+        {
+          id: 'org-4',
+          name: 'Nguyễn Văn C',
+          role: 'TRƯỞNG NHÓM TUYỂN DỤNG',
+          company: 'TIKITIKI',
+          image: '',
+          roleType: 'member',
+          parentLeaderId: 'org-3',
+          created_at: new Date().toISOString()
+        },
+        {
+          id: 'org-5',
+          name: 'Nguyễn Văn BCX',
+          role: 'TA MANAGER',
+          company: 'JOB SV',
+          image: '',
+          roleType: 'member',
+          parentLeaderId: 'org-3',
+          created_at: new Date().toISOString()
+        },
+        {
+          id: 'org-6',
+          name: 'Nguyễn Văn B',
+          role: 'LEADER',
+          company: 'BAUDSFB',
+          image: '',
+          roleType: 'member',
+          parentLeaderId: 'org-3',
           created_at: new Date().toISOString()
         }
       ];

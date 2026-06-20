@@ -27,7 +27,9 @@ export default function AdminDashboard() {
     role: '',
     company: '',
     image: '',
-    roleType: 'member' as 'founder' | 'admin' | 'leader' | 'member'
+    roleType: 'member' as 'founder' | 'admin' | 'leader' | 'member',
+    department: '',
+    parentLeaderId: ''
   });
   const [isEditingOrg, setIsEditingOrg] = useState(false);
 
@@ -80,12 +82,14 @@ export default function AdminDashboard() {
       company: orgForm.company,
       image: orgForm.image,
       roleType: orgForm.roleType,
+      department: orgForm.roleType === 'leader' ? orgForm.department : undefined,
+      parentLeaderId: orgForm.roleType === 'member' ? orgForm.parentLeaderId : undefined,
       created_at: new Date().toISOString()
     };
     await dbHelper.saveOrgMember(payload);
     const updated = await dbHelper.getOrgMembers();
     setOrgMembers(updated);
-    setOrgForm({ id: '', name: '', role: '', company: '', image: '', roleType: 'member' });
+    setOrgForm({ id: '', name: '', role: '', company: '', image: '', roleType: 'member', department: '', parentLeaderId: '' });
     setIsEditingOrg(false);
     alert('Đã lưu thành viên sơ đồ tổ chức thành công!');
   };
@@ -97,7 +101,9 @@ export default function AdminDashboard() {
       role: m.role,
       company: m.company,
       image: m.image,
-      roleType: m.roleType
+      roleType: m.roleType,
+      department: m.department || '',
+      parentLeaderId: m.parentLeaderId || ''
     });
     setIsEditingOrg(true);
   };
@@ -607,6 +613,38 @@ export default function AdminDashboard() {
                       />
                     </div>
 
+                    {orgForm.roleType === 'leader' && (
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Tên Ban quản lý *</label>
+                        <input
+                          type="text"
+                          required
+                          value={orgForm.department}
+                          onChange={(e) => setOrgForm({ ...orgForm, department: e.target.value })}
+                          className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                          placeholder="Ví dụ: Ban Tuyển dụng, Ban Truyền thông..."
+                        />
+                      </div>
+                    )}
+
+                    {orgForm.roleType === 'member' && (
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Trưởng Ban quản lý trực tiếp</label>
+                        <select
+                          value={orgForm.parentLeaderId}
+                          onChange={(e) => setOrgForm({ ...orgForm, parentLeaderId: e.target.value })}
+                          className="px-4 py-2 rounded-xl border border-gray-300 focus:border-[#D4AF37] focus:outline-none text-xs font-semibold bg-white"
+                        >
+                          <option value="">-- Thành viên chung (Không có Trưởng Ban) --</option>
+                          {orgMembers.filter(m => m.roleType === 'leader').map(leader => (
+                            <option key={leader.id} value={leader.id}>
+                              {leader.name} {leader.department ? `(${leader.department})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <div className="flex flex-col space-y-1">
                       <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Hình ảnh đại diện</label>
                       <div className="flex items-center space-x-3 mt-1">
@@ -645,7 +683,7 @@ export default function AdminDashboard() {
                         <button
                           type="button"
                           onClick={() => {
-                            setOrgForm({ id: '', name: '', role: '', company: '', image: '', roleType: 'member' });
+                            setOrgForm({ id: '', name: '', role: '', company: '', image: '', roleType: 'member', department: '', parentLeaderId: '' });
                             setIsEditingOrg(false);
                           }}
                           className="px-3 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs uppercase tracking-wider transition-colors"
@@ -679,8 +717,8 @@ export default function AdminDashboard() {
                                 : m.roleType === 'admin' 
                                 ? 'Thư ký / Admin' 
                                 : m.roleType === 'leader' 
-                                ? 'Trưởng Ban' 
-                                : 'Thành viên'}
+                                ? `Trưởng Ban ${m.department ? `(${m.department})` : ''}`
+                                : `Thành viên ${m.parentLeaderId ? `(Thuộc: ${orgMembers.find(l => l.id === m.parentLeaderId)?.name || 'Trưởng ban'})` : '(Thành viên chung)'}`}
                             </span>
                             <span className="text-[9px] text-gray-400 font-bold block mb-1 uppercase">{m.company}</span>
                             <p className="text-[11px] text-gray-500 font-semibold line-clamp-2">{m.role}</p>
