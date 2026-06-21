@@ -123,21 +123,25 @@ export default function Jobs() {
   useEffect(() => {
     async function loadData() {
       setCurrentUser(dbHelper.getCurrentUser());
-      
-      const jobsData = await dbHelper.getJobs();
-      setJobs(jobsData);
-      
-      const appsData = await dbHelper.getApplications();
-      setApplications(appsData);
+      try {
+        const [jobsData, appsData] = await Promise.all([
+          dbHelper.getJobs(),
+          dbHelper.getApplications()
+        ]);
+        setJobs(jobsData);
+        setApplications(appsData);
 
-      // Check jobId from URL search params
-      if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        const jobId = params.get('jobId');
-        if (jobId) {
-          const job = jobsData.find(j => j.id === jobId);
-          if (job) setSelectedJobDetail(job);
+        // Check jobId from URL search params
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const jobId = params.get('jobId');
+          if (jobId) {
+            const job = jobsData.find(j => j.id === jobId);
+            if (job) setSelectedJobDetail(job);
+          }
         }
+      } catch (err) {
+        console.error("Error loading jobs page data:", err);
       }
     }
     loadData();
