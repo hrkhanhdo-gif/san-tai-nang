@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Users, Briefcase, Check, X, Edit, Trash2, Camera, Upload, 
-  Settings, LayoutDashboard, Home, ArrowLeft, Plus, PlusCircle, CheckCircle
+  Settings, LayoutDashboard, Home, ArrowLeft, Plus, PlusCircle, CheckCircle, Zap
 } from 'lucide-react';
-import { dbHelper, UserSession, Member, JobApplication, OrgMember, HonoredMember, SystemSettings, CommunityActivity } from '@/lib/supabase';
+import { dbHelper, UserSession, Member, JobApplication, OrgMember, HonoredMember, SystemSettings, CommunityActivity, compressImage } from '@/lib/supabase';
 
 export default function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
@@ -58,24 +58,156 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizeStatus, setOptimizeStatus] = useState('');
+
+  const handleOptimizeDatabaseImages = async () => {
+    if (!confirm('Bạn có chắc chắn muốn quét và tối ưu hóa dung lượng hình ảnh hiện có trong database không? Quá trình này có thể tốn vài phút tùy thuộc vào lượng ảnh đang lưu.')) {
+      return;
+    }
+
+    setIsOptimizing(true);
+    try {
+      // 1. Sơ đồ tổ chức
+      setOptimizeStatus('Đang quét ảnh Sơ đồ tổ chức...');
+      const orgData = await dbHelper.getOrgMembers();
+      let orgOptimized = 0;
+      for (const m of orgData) {
+        if (m.image && m.image.startsWith('data:image/')) {
+          setOptimizeStatus(`Nén ảnh sơ đồ tổ chức: ${m.name}...`);
+          const compressed = await compressImage(m.image, 800, 800, 0.7);
+          if (compressed !== m.image) {
+            await dbHelper.saveOrgMember({ ...m, image: compressed });
+            orgOptimized++;
+          }
+        }
+      }
+
+      // 2. Vinh danh
+      setOptimizeStatus('Đang quét ảnh Vinh danh...');
+      const honoredData = await dbHelper.getHonoredMembers();
+      let honoredOptimized = 0;
+      for (const m of honoredData) {
+        if (m.image && m.image.startsWith('data:image/')) {
+          setOptimizeStatus(`Nén ảnh vinh danh...`);
+          const compressed = await compressImage(m.image, 1000, 1000, 0.7);
+          if (compressed !== m.image) {
+            await dbHelper.saveHonoredMember({ ...m, image: compressed });
+            honoredOptimized++;
+          }
+        }
+      }
+
+      // 3. Hoạt động
+      setOptimizeStatus('Đang quét bài viết hoạt động...');
+      const activitiesData = await dbHelper.getActivities();
+      let activitiesOptimized = 0;
+      for (const act of activitiesData) {
+        if (act.images && act.images.length > 0) {
+          setOptimizeStatus(`Nén ảnh bài viết: ${act.title}...`);
+          let changed = false;
+          const compressedImages = await Promise.all(
+            act.images.map(async (img) => {
+              if (img.startsWith('data:image/')) {
+                const comp = await compressImage(img, 1000, 1000, 0.7);
+                if (comp !== img) {
+                  changed = true;
+                  return comp;
+                }
+              }
+              return img;
+            })
+          );
+          if (changed) {
+            await dbHelper.updateActivity(act.id, { images: compressedImages });
+            activitiesOptimized++;
+          }
+        }
+      }
+
+      // 4. Cấu hình hệ thống
+      setOptimizeStatus('Đang quét cấu hình hệ thống...');
+      const settings = await dbHelper.getSystemSettings();
+      let settingsChanged = false;
+      const optimizedSettings = { ...settings };
+      if (settings.homepageBannerImage && settings.homepageBannerImage.startsWith('data:image/')) {
+        const comp = await compressImage(settings.homepageBannerImage, 1200, 1200, 0.75);
+        if (comp !== settings.homepageBannerImage) {
+          optimizedSettings.homepageBannerImage = comp;
+          settingsChanged = true;
+        }
+      }
+      if (settings.founder1_image && settings.founder1_image.startsWith('data:image/')) {
+        const comp = await compressImage(settings.founder1_image, 600, 600, 0.7);
+        if (comp !== settings.founder1_image) {
+          optimizedSettings.founder1_image = comp;
+          settingsChanged = true;
+        }
+      }
+      if (settings.founder2_image && settings.founder2_image.startsWith('data:image/')) {
+        const comp = await compressImage(settings.founder2_image, 600, 600, 0.7);
+        if (comp !== settings.founder2_image) {
+          optimizedSettings.founder2_image = comp;
+          settingsChanged = true;
+        }
+      }
+      if (settings.founder3_image && settings.founder3_image.startsWith('data:image/')) {
+        const comp = await compressImage(settings.founder3_image, 600, 600, 0.7);
+        if (comp !== settings.founder3_image) {
+          optimizedSettings.founder3_image = comp;
+          settingsChanged = true;
+        }
+      }
+      if (settings.thuanHn_image && settings.thuanHn_image.startsWith('data:image/')) {
+        const comp = await compressImage(settings.thuanHn_image, 800, 800, 0.7);
+        if (comp !== settings.thuanHn_image) {
+          optimizedSettings.thuanHn_image = comp;
+          settingsChanged = true;
+        }
+      }
+
+      if (settingsChanged) {
+        await dbHelper.saveSystemSettings(optimizedSettings);
+      }
+
+      setOptimizeStatus('Đang làm mới dữ liệu...');
+      await loadData();
+      alert(
+        `Đã tối ưu hóa dữ liệu thành công!\n` +
+        `- Sơ đồ tổ chức: ${orgOptimized} ảnh đã nén\n` +
+        `- Vinh danh: ${honoredOptimized} ảnh đã nén\n` +
+        `- Bài viết hoạt động: ${activitiesOptimized} bài viết đã nén\n` +
+        `- Cấu hình hệ thống: ${settingsChanged ? 'Đã nén tối ưu' : 'Không có thay đổi'}`
+      );
+    } catch (e) {
+      console.error(e);
+      alert('Đã xảy ra lỗi khi tối ưu hóa: ' + String(e));
+    } finally {
+      setIsOptimizing(false);
+      setOptimizeStatus('');
+    }
+  };
+
   async function loadData() {
-    const membersData = await dbHelper.getMembers();
-    setMembers(membersData);
-    
-    const appsData = await dbHelper.getApplications();
-    setApplications(appsData);
-    
-    const orgData = await dbHelper.getOrgMembers();
-    setOrgMembers(orgData);
-
-    const honoredData = await dbHelper.getHonoredMembers();
-    setHonoredMembers(honoredData);
-
-    const settingsData = await dbHelper.getSystemSettings();
-    setSettingsForm(settingsData);
-
-    const activitiesData = await dbHelper.getActivities();
-    setActivities(activitiesData);
+    try {
+      const [membersData, appsData, orgData, honoredData, settingsData, activitiesData] = await Promise.all([
+        dbHelper.getMembers(),
+        dbHelper.getApplications(),
+        dbHelper.getOrgMembers(),
+        dbHelper.getHonoredMembers(),
+        dbHelper.getSystemSettings(),
+        dbHelper.getActivities()
+      ]);
+      
+      setMembers(membersData);
+      setApplications(appsData);
+      setOrgMembers(orgData);
+      setHonoredMembers(honoredData);
+      setSettingsForm(settingsData);
+      setActivities(activitiesData);
+    } catch (e) {
+      console.error("Error loading admin data:", e);
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, callback: (base64: string) => void) => {
@@ -355,6 +487,36 @@ export default function AdminDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 mt-8">
+        {/* Banner tối ưu hóa cơ sở dữ liệu */}
+        <div className="mb-6 bg-[#FDFBF7] p-5 rounded-2xl border border-[#D4AF37]/20 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start space-x-3.5">
+            <div className="p-2.5 bg-amber-100 rounded-xl text-amber-600 mt-0.5">
+              <Zap size={18} className="animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">
+                Tối ưu hóa dung lượng hình ảnh cơ sở dữ liệu
+              </h3>
+              <p className="text-[10px] text-gray-500 font-semibold mt-1 leading-relaxed">
+                Quét và tự động nén tất cả hình ảnh hiện tại trong cơ sở dữ liệu (sơ đồ tổ chức, vinh danh, bài viết, trang chủ) từ vài MB xuống vài chục KB. 
+                Giúp hệ thống chạy cực nhanh và tránh đầy bộ nhớ Supabase.
+              </p>
+            </div>
+          </div>
+          <div className="flex-shrink-0">
+            <button
+              onClick={handleOptimizeDatabaseImages}
+              disabled={isOptimizing}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition-all ${
+                isOptimizing
+                  ? 'bg-gray-150 text-gray-400 cursor-not-allowed border border-gray-200'
+                  : 'bg-[#D4AF37] text-white hover:bg-[#B8860B] border border-transparent'
+              }`}
+            >
+              {isOptimizing ? `Đang tối ưu: ${optimizeStatus}` : 'Bắt đầu tối ưu hóa'}
+            </button>
+          </div>
+        </div>
         
         {/* Tab 1: Pending join requests */}
         {activeTab === 'join' && (

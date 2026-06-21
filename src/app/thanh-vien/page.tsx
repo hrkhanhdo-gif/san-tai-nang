@@ -46,11 +46,16 @@ export default function MembersPage() {
 
   useEffect(() => {
     async function loadData() {
-      const orgData = await dbHelper.getOrgMembers();
-      setOrgMembers(orgData);
-
-      const honoredData = await dbHelper.getHonoredMembers();
-      setHonoredMembers(honoredData);
+      try {
+        const [orgData, honoredData] = await Promise.all([
+          dbHelper.getOrgMembers(),
+          dbHelper.getHonoredMembers()
+        ]);
+        setOrgMembers(orgData);
+        setHonoredMembers(honoredData);
+      } catch (err) {
+        console.error("Error loading members page data:", err);
+      }
     }
     loadData();
   }, []);
@@ -227,9 +232,9 @@ export default function MembersPage() {
 
             {/* Connecting Line 1 (Founders to Admins) */}
             {admins.length > 0 && (
-              <div className="w-[3px] h-12 bg-gradient-to-b from-[#D4AF37] to-amber-500 my-1 relative">
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-[#D4AF37] rounded-full shadow-sm" />
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-amber-500 rounded-full shadow-sm" />
+              <div className="w-[4px] h-12 bg-gradient-to-b from-[#D4AF37] to-amber-500 my-1 relative">
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 bg-[#D4AF37] rounded-full shadow-sm" />
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 bg-amber-500 rounded-full shadow-sm" />
               </div>
             )}
 
@@ -268,9 +273,9 @@ export default function MembersPage() {
 
             {/* Connecting Line 2 (Admins to Leaders container) */}
             {totalColsCount > 0 && (
-              <div className="w-[3px] h-12 bg-gradient-to-b from-amber-500 to-[#CD7F32] my-1 relative">
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-amber-500 rounded-full shadow-sm" />
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-[#CD7F32] rounded-full shadow-sm" />
+              <div className="w-[4px] h-12 bg-gradient-to-b from-amber-500 to-[#CD7F32] my-1 relative">
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 bg-amber-500 rounded-full shadow-sm" />
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 bg-[#CD7F32] rounded-full shadow-sm" />
               </div>
             )}
 
@@ -279,7 +284,7 @@ export default function MembersPage() {
               <div className="relative flex flex-row items-start justify-center gap-x-16 gap-y-20 flex-wrap pt-10 w-full">
                 {/* Horizontal line connecting columns on desktop */}
                 {totalColsCount > 1 && (
-                  <div className="hidden md:block absolute top-0 left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+                  <div className="hidden md:block absolute top-0 left-[12%] right-[12%] h-[3px] bg-amber-500 shadow-sm" />
                 )}
 
                 {/* Render Leader Columns */}
@@ -289,7 +294,7 @@ export default function MembersPage() {
                     <div key={leader.id} className="relative flex flex-col items-center flex-1 min-w-[280px] max-w-full">
                       {/* Vertical connector to horizontal bar */}
                       {totalColsCount > 1 && (
-                        <div className="hidden md:block absolute top-[-40px] w-[2px] h-[40px] bg-amber-500/50" />
+                        <div className="hidden md:block absolute top-[-40px] w-[3px] h-[40px] bg-amber-500" />
                       )}
 
                       {/* Leader Card */}
@@ -333,7 +338,7 @@ export default function MembersPage() {
 
                       {/* Connector line from Leader to Sub-members */}
                       {subMembers.length > 0 && (
-                        <div className="w-[2px] h-10 bg-gradient-to-b from-[#CD7F32]/60 to-gray-200 my-3" />
+                        <div className="w-[3px] h-10 bg-gradient-to-b from-[#CD7F32] to-[#D4AF37] my-3" />
                       )}
 
                       {/* Sub-members grid (centered under Leader) */}
@@ -380,7 +385,7 @@ export default function MembersPage() {
                   <div className="relative flex flex-col items-center flex-1 min-w-[280px] max-w-full">
                     {/* Vertical connector to horizontal bar */}
                     {totalColsCount > 1 && (
-                      <div className="hidden md:block absolute top-[-40px] w-[2px] h-[40px] bg-gray-300/50" />
+                      <div className="hidden md:block absolute top-[-40px] w-[3px] h-[40px] bg-amber-500" />
                     )}
 
                     {/* General Members Header Card */}
@@ -410,7 +415,7 @@ export default function MembersPage() {
                     </MotionDiv>
 
                     {/* Connector line to general members */}
-                    <div className="w-[2px] h-10 bg-gray-250 my-3" />
+                    <div className="w-[3px] h-10 bg-amber-500 my-3" />
 
                     {/* General members list */}
                     <div className="flex flex-wrap justify-center gap-4 w-full mt-1">

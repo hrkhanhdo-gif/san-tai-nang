@@ -89,6 +89,17 @@ export default function HoatDong() {
     async function loadActivities() {
       const data = await dbHelper.getActivities();
       setActivitiesList(data);
+
+      if (typeof window !== 'undefined') {
+        const autoSelectId = sessionStorage.getItem('sntn_goto_activity_id');
+        if (autoSelectId) {
+          const matched = data.find(a => a.id === autoSelectId);
+          if (matched) {
+            setSelectedActivityDetail(matched);
+          }
+          sessionStorage.removeItem('sntn_goto_activity_id');
+        }
+      }
     }
     loadActivities();
 

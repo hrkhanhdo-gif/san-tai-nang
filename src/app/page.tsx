@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Users, 
   Briefcase, 
@@ -24,6 +25,12 @@ const emojiMap: Record<string, string> = {
 };
 
 export default function Home() {
+  const router = useRouter();
+
+  const handleActivityClick = (actId: string) => {
+    sessionStorage.setItem('sntn_goto_activity_id', actId);
+    router.push('/hoat-dong');
+  };
 
   const benefits = [
     {
@@ -63,12 +70,17 @@ export default function Home() {
 
   useEffect(() => {
     async function load() {
-      const all = await dbHelper.getActivities();
-      const featured = all.filter(act => act.showOnHomepage);
-      setActivitiesList(featured);
-
-      const settings = await dbHelper.getSystemSettings();
-      setSystemSettings(settings);
+      try {
+        const [all, settings] = await Promise.all([
+          dbHelper.getActivities(),
+          dbHelper.getSystemSettings()
+        ]);
+        const featured = all.filter(act => act.showOnHomepage);
+        setActivitiesList(featured);
+        setSystemSettings(settings);
+      } catch (err) {
+        console.error("Error loading homepage data:", err);
+      }
     }
     load();
   }, []);
@@ -295,68 +307,75 @@ export default function Home() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-              {/* Timeline */}
-              <div className="space-y-8 relative before:absolute before:left-6 before:top-4 before:bottom-4 before:w-[2px] before:bg-[#D4AF37]/20">
-                {activitiesList.map((act, index) => (
+            <div className="space-y-12 relative before:absolute before:left-6 before:top-4 before:bottom-4 before:w-[2px] before:bg-[#D4AF37]/20">
+              {activitiesList.map((act, index) => {
+                const hasImage = act.images && act.images.length > 0;
+                const emoji = emojiMap[act.imageType || 'books'] || '📚';
+                
+                return (
                   <MotionDiv
                     key={act.id}
-                    initial={{ opacity: 0, x: -30 }}
-                    whileInView={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="flex items-start space-x-6 relative pl-10 md:pl-12"
+                    className="flex items-stretch space-x-6 relative pl-10 md:pl-12"
                   >
                     {/* Timeline dot */}
-                    <div className="absolute left-4 w-4 h-4 rounded-full bg-[#D4AF37] border-4 border-white shadow-md flex-shrink-0 z-10" />
+                    <div className="absolute left-4 w-4 h-4 rounded-full bg-[#D4AF37] border-4 border-white shadow-md flex-shrink-0 z-10 top-6" />
                     
-                    <div className="p-6 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex-grow hover:border-[#D4AF37]/35 transition-colors">
-                      <span className="inline-block text-[10px] font-extrabold text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-2.5 py-1 rounded-md mb-3">
-                        {act.date || 'Đang diễn ra'}
-                      </span>
-                      <h4 className="text-lg font-bold text-gray-900 mb-2">{act.title}</h4>
-                      <p className="text-sm text-gray-600 leading-relaxed font-medium line-clamp-3">{act.description}</p>
+                    {/* Unified Grid Item */}
+                    <div 
+                      onClick={() => handleActivityClick(act.id)}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full cursor-pointer group"
+                    >
+                      {/* Left: Text Content Card */}
+                      <div className="p-6 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex flex-col justify-between hover:border-[#D4AF37]/35 hover:shadow-md transition-all duration-300 h-full">
+                        <div>
+                          <span className="inline-block text-[10px] font-extrabold text-[#B8860B] uppercase tracking-widest bg-[#D4AF37]/10 px-2.5 py-1 rounded-md mb-3">
+                            {act.date || 'Đang diễn ra'}
+                          </span>
+                          <h4 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-[#D4AF37] transition-colors line-clamp-2">
+                            {act.title}
+                          </h4>
+                          <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold line-clamp-4">
+                            {act.description}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-[#B8860B] group-hover:underline mt-4 block">
+                          Xem chi tiết bài viết →
+                        </span>
+                      </div>
+                      
+                      {/* Right: Image Card */}
+                      <div className="p-6 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm hover:border-[#D4AF37]/35 hover:shadow-md transition-all duration-300 flex flex-col h-full">
+                        <div className="w-full h-48 md:h-0 md:flex-grow rounded-xl overflow-hidden bg-gradient-to-br from-[#FDFBF7] to-[#D4AF37]/10 border border-[#D4AF37]/10 flex items-center justify-center relative">
+                          {hasImage ? (
+                            <img 
+                              src={act.images![0]} 
+                              alt={act.title} 
+                              className="w-full h-full object-cover absolute inset-0 transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center space-y-2 p-3 text-center transition-transform duration-500 group-hover:scale-105">
+                              <span className="text-4xl">{emoji}</span>
+                              <span className="text-xs text-[#B8860B] font-bold uppercase tracking-wider">{act.category}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-4 flex flex-col flex-shrink-0">
+                          <span className="text-[10px] font-extrabold text-[#B8860B] uppercase tracking-wider">
+                            {act.category}
+                          </span>
+                          <span className="text-sm font-bold text-gray-900 line-clamp-1 mt-1">
+                            {act.title}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </MotionDiv>
-                ))}
-              </div>
-
-              {/* Premium Gold/White Gallery */}
-              <div className="grid grid-cols-2 gap-4 lg:sticky lg:top-24">
-                {activitiesList.slice(0, 4).map((act, index) => {
-                  const hasImage = act.images && act.images.length > 0;
-                  const emoji = emojiMap[act.imageType || 'books'] || '📚';
-                  
-                  // Staggered layout spacing
-                  const spacingClass = index === 1 ? 'mt-6' : index === 2 ? '-mt-6' : '';
-                  
-                  return (
-                    <div 
-                      key={act.id}
-                      className={`p-4 rounded-2xl bg-white border border-[#D4AF37]/10 shadow-sm flex flex-col space-y-4 hover:border-[#D4AF37]/35 transition-all ${spacingClass}`}
-                    >
-                      <div className="aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-[#FDFBF7] to-[#D4AF37]/10 border border-[#D4AF37]/10 flex items-center justify-center text-white font-black text-center p-3 text-sm relative">
-                        {hasImage ? (
-                          <img 
-                            src={act.images![0]} 
-                            alt={act.title} 
-                            className="w-full h-full object-cover absolute inset-0"
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center space-y-2">
-                            <span className="text-3xl">{emoji}</span>
-                            <span className="text-[10px] text-[#B8860B] font-bold uppercase tracking-wider">{act.category}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-[#B8860B] font-bold uppercase">{act.category}</span>
-                        <span className="text-sm font-bold text-gray-900 line-clamp-1">{act.title}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                );
+              })}
             </div>
           )}
         </div>

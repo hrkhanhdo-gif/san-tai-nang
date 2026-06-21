@@ -210,6 +210,55 @@ const DEFAULT_JOBS: Job[] = [
 
 const DEFAULT_ACTIVITIES: CommunityActivity[] = [];
 
+// Helper function to compress images using Canvas client-side
+export function compressImage(
+  base64Str: string,
+  maxWidth = 1000,
+  maxHeight = 1000,
+  quality = 0.7
+): Promise<string> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !base64Str || !base64Str.startsWith('data:image/')) {
+      resolve(base64Str);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(base64Str);
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => {
+      resolve(base64Str);
+    };
+    img.src = base64Str;
+  });
+}
+
 // Helper to execute query against Supabase with local storage fallback
 async function executeDbQuery<T>(
   supabaseOp: () => PromiseLike<{ data: any; error: any }>,
@@ -636,8 +685,10 @@ export const dbHelper = {
   },
 
   async addActivity(act: Omit<CommunityActivity, 'id' | 'created_at' | 'likes' | 'comments'>): Promise<CommunityActivity> {
+    const compressedImages = act.images ? await Promise.all(act.images.map(img => compressImage(img, 1000, 1000, 0.7))) : [];
+    const optimizedAct = { ...act, images: compressedImages };
     const newAct: CommunityActivity = {
-      ...act,
+      ...optimizedAct,
       id: 'act-' + Math.random().toString(36).substr(2, 9),
       likes: [],
       comments: [],
@@ -654,6 +705,34 @@ export const dbHelper = {
       }
     );
     return newAct;
+  },
+
+  async updateActivity(id: string, updatedData: Partial<CommunityActivity>): Promise<boolean> {
+    const optimizedData = { ...updatedData };
+    if (updatedData.images) {
+      optimizedData.images = await Promise.all(
+        updatedData.images.map(img => compressImage(img, 1000, 1000, 0.7))
+      );
+    }
+    let success = false;
+    await executeDbMutation(
+      () => supabase!.from('sntn_activities').update(optimizedData).eq('id', id),
+      async () => {
+        if (typeof window !== 'undefined') {
+          const activities = await dbHelper.getActivities();
+          const idx = activities.findIndex(a => a.id === id);
+          if (idx !== -1) {
+            activities[idx] = {
+              ...activities[idx],
+              ...optimizedData
+            };
+            localStorage.setItem('sntn_activities', JSON.stringify(activities));
+            success = true;
+          }
+        }
+      }
+    );
+    return success;
   },
 
   async toggleLikeActivity(activityId: string, userEmail: string): Promise<string[]> {
@@ -824,16 +903,18 @@ export const dbHelper = {
   },
 
   async saveOrgMember(member: OrgMember): Promise<void> {
+    const compressedImage = await compressImage(member.image, 800, 800, 0.7);
+    const optimizedMember = { ...member, image: compressedImage };
     await executeDbMutation(
-      () => supabase!.from('sntn_org_members').upsert(member),
+      () => supabase!.from('sntn_org_members').upsert(optimizedMember),
       async () => {
         if (typeof window === 'undefined') return;
         const members = await dbHelper.getOrgMembers();
         const idx = members.findIndex(m => m.id === member.id);
         if (idx !== -1) {
-          members[idx] = member;
+          members[idx] = optimizedMember;
         } else {
-          members.push(member);
+          members.push(optimizedMember);
         }
         localStorage.setItem('sntn_org_members', JSON.stringify(members));
       }
@@ -876,16 +957,18 @@ export const dbHelper = {
   },
 
   async saveHonoredMember(member: HonoredMember): Promise<void> {
+    const compressedImage = await compressImage(member.image, 1000, 1000, 0.7);
+    const optimizedMember = { ...member, image: compressedImage };
     await executeDbMutation(
-      () => supabase!.from('sntn_honored_members').upsert(member),
+      () => supabase!.from('sntn_honored_members').upsert(optimizedMember),
       async () => {
         if (typeof window === 'undefined') return;
         const members = await dbHelper.getHonoredMembers();
         const idx = members.findIndex(m => m.id === member.id);
         if (idx !== -1) {
-          members[idx] = member;
+          members[idx] = optimizedMember;
         } else {
-          members.push(member);
+          members.push(optimizedMember);
         }
         localStorage.setItem('sntn_honored_members', JSON.stringify(members));
       }
@@ -925,11 +1008,28 @@ export const dbHelper = {
   },
 
   async saveSystemSettings(settings: SystemSettings): Promise<void> {
+    const optimizedSettings = { ...settings };
+    if (settings.homepageBannerImage) {
+      optimizedSettings.homepageBannerImage = await compressImage(settings.homepageBannerImage, 1200, 1200, 0.75);
+    }
+    if (settings.founder1_image) {
+      optimizedSettings.founder1_image = await compressImage(settings.founder1_image, 600, 600, 0.7);
+    }
+    if (settings.founder2_image) {
+      optimizedSettings.founder2_image = await compressImage(settings.founder2_image, 600, 600, 0.7);
+    }
+    if (settings.founder3_image) {
+      optimizedSettings.founder3_image = await compressImage(settings.founder3_image, 600, 600, 0.7);
+    }
+    if (settings.thuanHn_image) {
+      optimizedSettings.thuanHn_image = await compressImage(settings.thuanHn_image, 800, 800, 0.7);
+    }
+
     await executeDbMutation(
-      () => supabase!.from('sntn_system_settings').upsert({ id: 'global_settings', ...settings }),
+      () => supabase!.from('sntn_system_settings').upsert({ id: 'global_settings', ...optimizedSettings }),
       async () => {
         if (typeof window === 'undefined') return;
-        localStorage.setItem('sntn_system_settings', JSON.stringify(settings));
+        localStorage.setItem('sntn_system_settings', JSON.stringify(optimizedSettings));
       }
     );
   }

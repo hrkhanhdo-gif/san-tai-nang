@@ -70,7 +70,6 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-3 group">
           <div className="w-10 h-10 rounded-full overflow-hidden border border-[#D4AF37]/20 shadow-md transition-transform group-hover:scale-110 relative flex-shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
