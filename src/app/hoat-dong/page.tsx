@@ -87,18 +87,45 @@ export default function HoatDong() {
   useEffect(() => {
     setCurrentUser(dbHelper.getCurrentUser());
     async function loadActivities() {
-      const data = await dbHelper.getActivities();
-      setActivitiesList(data);
-
+      // 1. Load from local cache immediately (instant render)
       if (typeof window !== 'undefined') {
-        const autoSelectId = sessionStorage.getItem('sntn_goto_activity_id');
-        if (autoSelectId) {
-          const matched = data.find(a => a.id === autoSelectId);
-          if (matched) {
-            setSelectedActivityDetail(matched);
+        const local = localStorage.getItem('sntn_activities');
+        if (local) {
+          try {
+            const cachedData = JSON.parse(local);
+            setActivitiesList(cachedData);
+            
+            // Check autoSelect from cache first
+            const autoSelectId = sessionStorage.getItem('sntn_goto_activity_id');
+            if (autoSelectId) {
+              const matched = cachedData.find((a: any) => a.id === autoSelectId);
+              if (matched) {
+                setSelectedActivityDetail(matched);
+              }
+            }
+          } catch (e) {
+            console.error("Error parsing local activities:", e);
           }
-          sessionStorage.removeItem('sntn_goto_activity_id');
         }
+      }
+
+      // 2. Fetch fresh data from Supabase in the background
+      try {
+        const data = await dbHelper.getActivities();
+        setActivitiesList(data);
+
+        if (typeof window !== 'undefined') {
+          const autoSelectId = sessionStorage.getItem('sntn_goto_activity_id');
+          if (autoSelectId) {
+            const matched = data.find(a => a.id === autoSelectId);
+            if (matched) {
+              setSelectedActivityDetail(matched);
+            }
+            sessionStorage.removeItem('sntn_goto_activity_id');
+          }
+        }
+      } catch (err) {
+        console.error("Error loading activities:", err);
       }
     }
     loadActivities();

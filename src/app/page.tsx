@@ -70,6 +70,28 @@ export default function Home() {
 
   useEffect(() => {
     async function load() {
+      // 1. Load from local cache immediately (instant render)
+      if (typeof window !== 'undefined') {
+        const localActs = localStorage.getItem('sntn_activities');
+        const localSettings = localStorage.getItem('sntn_system_settings');
+        if (localActs) {
+          try {
+            const all = JSON.parse(localActs);
+            setActivitiesList(all.filter((act: any) => act.showOnHomepage));
+          } catch (e) {
+            console.error("Error parsing local activities:", e);
+          }
+        }
+        if (localSettings) {
+          try {
+            setSystemSettings(JSON.parse(localSettings));
+          } catch (e) {
+            console.error("Error parsing local settings:", e);
+          }
+        }
+      }
+
+      // 2. Fetch fresh data from Supabase in the background
       try {
         const [all, settings] = await Promise.all([
           dbHelper.getActivities(),

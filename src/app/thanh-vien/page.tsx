@@ -46,6 +46,27 @@ export default function MembersPage() {
 
   useEffect(() => {
     async function loadData() {
+      // 1. Load from local cache immediately (instant render)
+      if (typeof window !== 'undefined') {
+        const localOrg = localStorage.getItem('sntn_org_members');
+        const localHonored = localStorage.getItem('sntn_honored_members');
+        if (localOrg) {
+          try {
+            setOrgMembers(JSON.parse(localOrg));
+          } catch (e) {
+            console.error("Error parsing local org members:", e);
+          }
+        }
+        if (localHonored) {
+          try {
+            setHonoredMembers(JSON.parse(localHonored));
+          } catch (e) {
+            console.error("Error parsing local honored members:", e);
+          }
+        }
+      }
+
+      // 2. Fetch fresh data from Supabase in the background
       try {
         const [orgData, honoredData] = await Promise.all([
           dbHelper.getOrgMembers(),

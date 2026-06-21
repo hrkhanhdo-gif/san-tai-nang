@@ -123,6 +123,37 @@ export default function Jobs() {
   useEffect(() => {
     async function loadData() {
       setCurrentUser(dbHelper.getCurrentUser());
+      
+      // 1. Load from local cache immediately (instant render)
+      if (typeof window !== 'undefined') {
+        const localJobs = localStorage.getItem('sntn_jobs');
+        const localApps = localStorage.getItem('sntn_applications');
+        if (localJobs) {
+          try {
+            const cachedJobs = JSON.parse(localJobs);
+            setJobs(cachedJobs);
+            
+            // Check jobId from URL search params in cache first
+            const params = new URLSearchParams(window.location.search);
+            const jobId = params.get('jobId');
+            if (jobId) {
+              const job = cachedJobs.find((j: any) => j.id === jobId);
+              if (job) setSelectedJobDetail(job);
+            }
+          } catch (e) {
+            console.error("Error parsing local jobs:", e);
+          }
+        }
+        if (localApps) {
+          try {
+            setApplications(JSON.parse(localApps));
+          } catch (e) {
+            console.error("Error parsing local applications:", e);
+          }
+        }
+      }
+
+      // 2. Fetch fresh data from Supabase in the background
       try {
         const [jobsData, appsData] = await Promise.all([
           dbHelper.getJobs(),
@@ -131,7 +162,7 @@ export default function Jobs() {
         setJobs(jobsData);
         setApplications(appsData);
 
-        // Check jobId from URL search params
+        // Check jobId from URL search params again with fresh data
         if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search);
           const jobId = params.get('jobId');
